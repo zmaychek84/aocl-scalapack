@@ -20,14 +20,15 @@
 #define _VERSION_MAKE_STR(x) #x
 
 #ifdef __STDC__
-void get_aocl_scalapack_version_( char * version )
+void get_aocl_scalapack_version_( char * version, int *ver_str_len )
 #else
-void get_aocl_scalapack_version_( version )
+void get_aocl_scalapack_version_( version, ver_str_len )
    char * version;
+   int *ver_str_len;
 #endif
 {
 #ifdef AOCL_SCALAPACK_VERSION
-     char slmainversion[] = "AOCL-ScaLAPACK 4.0.1 ";
+     char slmainversion[] = "AOCL-ScaLAPACK 4.1.0 Beta ";
      char slversion[1000];
      char scalapackversion[] = ", supports ScaLAPACK 2.2.0";
      int length, i;
@@ -50,9 +51,11 @@ void get_aocl_scalapack_version_( version )
      }
 
      slversion[length] = '\0';
+     *ver_str_len = length;
      strcpy(version, slversion);
 #else
-    strcpy(version, "AOCL-ScaLAPACK 4.0.1, supports ScaLAPACK 2.2.0");
+    strcpy(version, "AOCL-ScaLAPACK 4.1.0 Beta, supports ScaLAPACK 2.2.0");
+    *ver_str_len = strlen("AOCL-ScaLAPACK 4.1.0 Beta, supports ScaLAPACK 2.2.0");
 #endif
 return;
 }

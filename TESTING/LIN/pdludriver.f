@@ -116,13 +116,14 @@
      $                   NBVAL( NTESTS ), NRVAL( NTESTS ),
      $                   NVAL( NTESTS ), PVAL( NTESTS ),
      $                   QVAL( NTESTS )
-#ifndef DYNAMIC_WORK_MEM_ALLOC     
+#ifndef DYNAMIC_WORK_MEM_ALLOC
       DOUBLE PRECISION   MEM( MEMSIZ ), CTIME( 2 ), WTIME( 2 )
 #else
       DOUBLE PRECISION   CTIME( 2 ), WTIME( 2 )
       DOUBLE PRECISION, allocatable :: MEM (:)
 #endif
       CHARACTER          SVERSION( 100 )
+      INTEGER            VER_STR_LEN
 *     ..
 *     .. External Subroutines ..
       EXTERNAL           BLACS_BARRIER, BLACS_EXIT, BLACS_GET,
@@ -164,9 +165,9 @@
 *     Print version
 *
       IF( IAM.EQ.0 ) THEN
-          CALL GET_AOCL_SCALAPACK_VERSION( SVERSION )
-          WRITE(*, *) 
-          WRITE(*, *) 'AOCL Version: ', SVERSION
+          CALL GET_AOCL_SCALAPACK_VERSION( SVERSION, VER_STR_LEN )
+          WRITE(*, *)
+          WRITE(*, *) 'AOCL Version: ', SVERSION(1:VER_STR_LEN)
       END IF
 *
 *     Print headings
