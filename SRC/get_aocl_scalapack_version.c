@@ -3,7 +3,7 @@
 /* ---------------------------------------------------------------------
 *
 *  -- AOCL ScaLAPACK routine --
-*     Copyright (c) 2020-2022 Advanced Micro Devices, Inc.  All rights reserved.
+*     Copyright (c) 2020-2023 Advanced Micro Devices, Inc.  All rights reserved.
 *
 *  ---------------------------------------------------------------------
 */
@@ -20,40 +20,43 @@
 #define _VERSION_MAKE_STR(x) #x
 
 #ifdef __STDC__
-void get_aocl_scalapack_version_( char * version )
+void get_aocl_scalapack_version_( char * version, int *ver_str_len )
 #else
-void get_aocl_scalapack_version_( version )
+void get_aocl_scalapack_version_( version, ver_str_len )
    char * version;
+   int *ver_str_len;
 #endif
 {
 #ifdef AOCL_SCALAPACK_VERSION
-     char slmainversion[] = "AOCL-ScaLAPACK 4.0 ";
+     char slmainversion[] = "AOCL-ScaLAPACK 4.1.0 ";
      char slversion[1000];
      char scalapackversion[] = ", supports ScaLAPACK 2.2.0";
      int length, i;
 
      length = 0;
-     for (i = 0; i<strlen(slmainversion); ++i, ++length) 
-     { 
+     for (i = 0; i<strlen(slmainversion); ++i, ++length)
+     {
 	    slversion[length] = slmainversion[i];
      }
 
      char configslversion[] = VERSION_MAKE_STR(AOCL_SCALAPACK_VERSION);
-     for (i = 0; i<strlen(configslversion); ++i, ++length) 
+     for (i = 0; i<strlen(configslversion); ++i, ++length)
      {
 	    slversion[length] = configslversion[i];
      }
 
-     for (i = 0; i < strlen(scalapackversion); ++i, ++length) 
+     for (i = 0; i < strlen(scalapackversion); ++i, ++length)
      {
 	    slversion[length] = scalapackversion[i];
      }
 
      slversion[length] = '\0';
+     *ver_str_len = length;
      strcpy(version, slversion);
 #else
-    strcpy(version, "AOCL-ScaLAPACK 4.0, supports ScaLAPACK 2.2.0");
-#endif  
+    strcpy(version, "AOCL-ScaLAPACK 4.1.0, supports ScaLAPACK 2.2.0");
+    *ver_str_len = strlen("AOCL-ScaLAPACK 4.1.0, supports ScaLAPACK 2.2.0");
+#endif
 return;
 }
 

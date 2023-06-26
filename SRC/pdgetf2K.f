@@ -1,9 +1,14 @@
+*
+*     Copyright (c) 2020-23 Advanced Micro Devices, Inc.  All rights reserved.
+*
 *  -- ScaLAPACK routine --
-*     Copyright (c) 2020-21 Advanced Micro Devices, Inc.  All rights reserved.
-*     June 10, 2020
+*
+*
+#include "SL_Context_fortran_include.h"
 *
       SUBROUTINE PDGETF2K( M, N, A, IA, JA, DESCA, IPIV, PANEL, INFO )
 *
+      USE LINK_TO_C_GLOBALS
 *     .. Scalar Arguments ..
       INTEGER            IA, INFO, JA, M, N
 *     ..
@@ -43,7 +48,7 @@
 *  to be present entirely in a single column of processes in the
 *  2D grid. This function is an internal function called by LU
 *  factorization using lookahead panel optimization. In addition,
-*  the top L11 matrix is copied to a temporary buffer in the 
+*  the top L11 matrix is copied to a temporary buffer in the
 *  panel struct.
 *
 *  The factorization has the form sub( A ) = P * L * U, where P is a
@@ -187,13 +192,41 @@
 *     .. Intrinsic Functions ..
       INTRINSIC          MIN, MOD
 *     ..
+*     .. LOG variables declaration ..
+*     ..
+*     BUFFER size: Function name and Process grid info (128 Bytes) +
+*       Variable names + Variable values(num_vars *10)
+      CHARACTER  BUFFER*256
+      CHARACTER*2, PARAMETER :: eos_str = '' // C_NULL_CHAR
 *     .. Executable Statements ..
+*
+*     Initialize framework context structure if not initialized
+*
+*
+      CALL AOCL_SCALAPACK_INIT( )
+*
+*
+*     Capture the subroutine entry in the trace file
+*
+      AOCL_DTL_TRACE_ENTRY_F
 *
 *     Get grid parameters.
 *
       ICTXT = DESCA( CTXT_ )
       LDA   = DESCA( LLD_ )
       CALL BLACS_GRIDINFO( ICTXT, NPROW, NPCOL, MYROW, MYCOL )
+*
+*     Update the log buffer with the scalar arguments details,
+*     MPI process grid information and write to the log file
+*
+      IF( SCALAPACK_CONTEXT%IS_LOG_ENABLED.EQ.1 ) THEN
+         WRITE(BUFFER,102)  IA, INFO, JA, M, N, NPROW, NPCOL,
+     $            MYROW, MYCOL, eos_str
+ 102     FORMAT('PDGETF2K inputs:,IA:',I5,',INFO:',I5,',JA:',I5,
+     $           ',M:',I5,',N:',I5,',NPROW:',I5,
+     $           ',NPCOL:',I5 ,',MYROW:',I5,',MYCOL:',I5,A5)
+         AOCL_DTL_LOG_ENTRY_F
+      END IF
 *
 *     Test the input parameters.
 *
@@ -220,13 +253,22 @@
       IF( INFO.NE.0 ) THEN
          CALL PXERBLA( ICTXT, 'PDGETF2', -INFO )
          CALL BLACS_ABORT( ICTXT, 1 )
+*
+*        Capture the subroutine exit in the trace file
+*
+         AOCL_DTL_TRACE_EXIT_F
          RETURN
       END IF
 *
 *     Quick return if possible
 *
-      IF( M.EQ.0 .OR. N.EQ.0 )
-     $   RETURN
+      IF( M.EQ.0 .OR. N.EQ.0 ) THEN
+*
+*        Capture the subroutine exit in the trace file
+*
+         AOCL_DTL_TRACE_EXIT_F
+         RETURN
+      END IF
 *
       MN = MIN( M, N )
       CALL INFOG2L( IA, JA, DESCA, NPROW, NPCOL, MYROW, MYCOL, IIA, JJA,
@@ -263,7 +305,7 @@
             IF( J-JA+1.LT.MN ) THEN
                CALL PDGER( M-J+JA-1, N-J+JA-1, -ONE, A, I+1, J, DESCA,
      $                     1, A, I, J+1, DESCA, DESCA( M_ ), A, I+1,
-     $                     J+1, DESCA ) 
+     $                     J+1, DESCA )
             END IF
             PI = PI + 1
    10    CONTINUE
@@ -271,7 +313,7 @@
 *        Copy L11 into LMEM.
 *
          IF( MYROW.EQ.IAROW )
-     $      CALL PDPANEL_LCOPY( A, IA, JA, LDA, N, PANEL ) 
+     $      CALL PDPANEL_LCOPY( A, IA, JA, LDA, N, PANEL )
 *
 *        Broadcast L11 with-in column
 *
@@ -279,6 +321,10 @@
 *
       END IF
 *
+*
+*     Capture the subroutine exit in the trace file
+*
+      AOCL_DTL_TRACE_EXIT_F
       RETURN
 *
 *     End of PDGETF2K

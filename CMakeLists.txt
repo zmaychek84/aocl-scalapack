@@ -1,9 +1,9 @@
-##Copyright (C) 2021-2022, Advanced Micro Devices, Inc. All rights reserved.##
+##Copyright (C) 2021-2023, Advanced Micro Devices, Inc. All rights reserved.##
 
 cmake_minimum_required(VERSION 3.2)
 project(SCALAPACK C Fortran)
 # Configure the warning and code coverage suppression file
-configure_file( 
+configure_file(
   "${SCALAPACK_SOURCE_DIR}/CMAKE/CTestCustom.cmake.in"
   "${SCALAPACK_BINARY_DIR}/CTestCustom.cmake"
   COPYONLY
@@ -16,34 +16,90 @@ endif ()
 # Add the CMake directory for custon CMake modules
 set(CMAKE_MODULE_PATH "${SCALAPACK_SOURCE_DIR}/CMAKE" ${CMAKE_MODULE_PATH})
 
-#Build Options
+set(SL_FRAMEWORK_INCLUDE_PATH  "${SCALAPACK_SOURCE_DIR}/FRAMEWORK")
+
+# ------   Build Options List  -----------
 
 # ILP64 build option
 option(ENABLE_ILP64 "Enable ILP64 " OFF)
-option(ENABLE_AOCL_PROGRESS "Enable ILP64 " OFF)
-option(ENABLE_DTL "Enable ILP64 " OFF)
+
+# aocl progress option
+option(ENABLE_AOCL_PROGRESS "Enable progress feature " OFF)
+
+# DTL option
+option(ENABLE_DTL "Enable DTL feature " OFF)
+
+# ASAN testing option
+option(ENABLE_ASAN_TESTS "Enable Address sanitizer tests " OFF)
 
 # Option: Include build number in the version string.
 option (ENABLE_SET_LIB_VERSION "Set library version" OFF)
+
+# Option: Dynamic allocation of work buffer memory in Test code
+# Helpful to test larger matrix sizes more than 2K
+option (ENABLE_LARGE_MATRIX_TESTING "Dynamic allocation of work buffer memory in test code" OFF)
+
+# ------   Build Options List End   -----------
+
 
 if (WIN32 AND CMAKE_Fortran_COMPILER_ID MATCHES "Intel")
     set (CMAKE_IFORT_LIBDEPS_DIR "C:/Program Files (x86)/IntelSWTools/compilers_and_libraries/windows/compiler/lib/intel64_win" CACHE STRING "")
 endif()
 
 set(CMAKE_ICC_FLAGS " ")
+set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -cpp" )
+
+# set compile flags to enable address sanitizer (ASAN) tests
+if(ENABLE_ASAN_TESTS)
+   set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -fsanitize=address " )
+   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=address  ")
+   message(STATUS " ASAN testing enabled for the scaLAPACK build ")
+endif(ENABLE_ASAN_TESTS)
+
+# Option to enable the scaLAPACK test-suite with "Dynamic work buffer memory allocation".
+if(ENABLE_LARGE_MATRIX_TESTING)
+
+#  Configure option to customize Dynamic work buffer size "-DWORK_BUFFER_SIZE = custom_size Bytes"
+#  as per the machine's memory configuration.
+   if(WORK_BUFFER_SIZE)
+      message(STATUS "scaLAPACK test-suite build with custom dynamic work_buffer_size: ${WORK_BUFFER_SIZE} bytes.")
+      set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS}  -DDYNAMIC_WORK_MEM_ALLOC -DWORK_BUFFER_SIZE=${WORK_BUFFER_SIZE}" )
+   else(WORK_BUFFER_SIZE)
+#  Build with Dynamic work buffer size = 2100000000 bytes by default.
+      message(STATUS "scaLAPACK test-suite build with dynamic work_buffer_size: 2100000000 bytes.")
+      set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS}  -DDYNAMIC_WORK_MEM_ALLOC -DWORK_BUFFER_SIZE=2100000000 " )
+   endif(WORK_BUFFER_SIZE)
+
+endif(ENABLE_LARGE_MATRIX_TESTING)
+
 
 if (UNIX)
+   if ("${CMAKE_C_COMPILER_ID}" STREQUAL "GNU")
+      set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -cpp -ffixed-line-length-none -I ${SL_FRAMEWORK_INCLUDE_PATH}/" )
+   endif ()
+   if ("${CMAKE_Fortran_COMPILER_ID}" STREQUAL "Flang")
+      set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -cpp -ffixed-line-length-132 -I ${SL_FRAMEWORK_INCLUDE_PATH}/" )
+   endif ()
    if ("${CMAKE_Fortran_COMPILER_ID}" STREQUAL "Intel")
-      set( CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -fltconsistency -fp_port" )
+      set( CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -fltconsistency -fp_port -no-vec -cpp -I ${SL_FRAMEWORK_INCLUDE_PATH}/" )
+   elseif ("${CMAKE_Fortran_COMPILER}" MATCHES "ifort" )
+      set( CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -fltconsistency -fp_port -no-vec -cpp -I ${SL_FRAMEWORK_INCLUDE_PATH}/" )
    endif ()
-   if ( "${CMAKE_Fortran_COMPILER}" MATCHES "ifort" )
-      set( CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -fltconsistency -fp_port" )
-   endif ()
+
    if (("${CMAKE_C_COMPILER_ID}" STREQUAL "Intel") AND ( "${CMAKE_C_COMPILER}" MATCHES "icc" ) )
-      set( CMAKE_ICC_FLAGS "${CMAKE_ICC_FLAGS} -no-vec ")
+      set(CMAKE_ICC_FLAGS "${CMAKE_ICC_FLAGS} -no-vec ")
       message(STATUS "Found Intel icc compiler : ${CMAKE_ICC_FLAGS} ")
    endif ()
+
+   if (("${CMAKE_C_COMPILER_ID}" STREQUAL "IntelLLVM") AND ( "${CMAKE_C_COMPILER}" MATCHES "icc" ) )
+      set(CMAKE_ICC_FLAGS "${CMAKE_ICC_FLAGS} -Wno-implicit-function-declaration")
+      set(CMAKE_ICC_FLAGS "${CMAKE_ICC_FLAGS} -no-vec ")
+      message(STATUS "Found Intel icx compiler : ${CMAKE_ICC_FLAGS} ")
+   endif ()
+else ()
+   set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -cpp -I ${SL_FRAMEWORK_INCLUDE_PATH}/ " )
 endif ()
+
 
 #
 #   MPI
@@ -77,8 +133,8 @@ if (MPI_FOUND)
       PATH_SUFFIXES bin
       DOC "MPI Fortran compiler.")
    MARK_AS_ADVANCED(MPI_Fortran_COMPILER)
-   
-   
+
+
 
    if ("${MPI_Fortran_COMPILER}" STREQUAL "MPI_Fortran_COMPILER-NOTFOUND")
       message(ERROR "--> MPI Fortran Compiler NOT FOUND (please set MPI_BASE_DIR accordingly")
@@ -88,7 +144,7 @@ if (MPI_FOUND)
       SET(CMAKE_Fortran_COMPILER "${MPI_Fortran_COMPILER}")
       message(STATUS "--> Fortran Compiler : ${CMAKE_Fortran_COMPILER}")
    endif()
-   
+
 else()
    message(STATUS "Found MPI_LIBRARY : ${MPI_FOUND} ")
    set(MPI_BASE_DIR ${MPI_BASE_DIR} CACHE PATH "MPI Path")
@@ -103,16 +159,6 @@ else()
    message(FATAL_ERROR "--> MPI Library NOT FOUND -- please set MPI_BASE_DIR accordingly --")
 endif()
 
-
-if (UNIX)
-   if ("${CMAKE_Fortran_COMPILER_ID}" STREQUAL "Intel")
-      set( CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -fltconsistency -fp_port" )
-   endif ()
-   if ( "${CMAKE_Fortran_COMPILER}" MATCHES "ifort" )
-  set( CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -fltconsistency -fp_port" )
-   endif ()
-endif ()
-
 macro(SCALAPACK_install_library lib)
   install(TARGETS ${lib} EXPORT scalapack-targets
     ARCHIVE DESTINATION lib${LIB_SUFFIX}
@@ -120,6 +166,18 @@ macro(SCALAPACK_install_library lib)
     RUNTIME DESTINATION Testing
   )
 endmacro()
+
+#Function to add file name for DTL purpose
+function(custom_macros_for_each_scalapack_source  target_library_sources)
+    get_target_property(src_files_list "${target_library_sources}" SOURCES)
+    foreach(src_file ${src_files_list})
+        get_filename_component(src_file_name "${src_file}" NAME)
+        get_filename_component(function_name "${src_file}" NAME_WLE)
+        set_property(
+            SOURCE "${src_file}" APPEND
+            PROPERTY COMPILE_DEFINITIONS "FUNCTION_NAME=\"${function_name}\""  "FILE_NAME=\"${src_file_name}\"" )
+    endforeach()
+endfunction()
 
 # --------------------------------------------------
 # Testing
@@ -162,19 +220,16 @@ MESSAGE(STATUS "=========")
 # Compiler Flags
 option(USE_F2C "Use FORTRAN To C compatible interface for certain Complex type functions" OFF)
 
-set(f2cflag "-cpp ")
-
 if(USE_F2C)
-  set(f2cflag "-cpp -DF2C " )
+  set(f2cflag "-DF2C " )
 ENDIF(USE_F2C)
+MESSAGE(STATUS "CMAKE_C_COMPILER_ID = ${CMAKE_C_COMPILER_ID}")
+MESSAGE(STATUS "CMAKE_Fortran_COMPILER_ID = ${CMAKE_Fortran_COMPILER_ID}")
 
 if(ENABLE_DTL)
-#Enable DTL for GNU tool chain in UNIX
+#Enable DTL for UNIX
   if(UNIX)
-    if ("${CMAKE_C_COMPILER_ID}" STREQUAL "GNU")
       add_definitions("-DAOCL_DTL ")
-      set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -cpp -ffixed-line-length-none")
-    endif ()
   endif()
 ENDIF(ENABLE_DTL)
 
@@ -189,7 +244,7 @@ if(ENABLE_ILP64)
    add_definitions("-DInt=__int64" "-DENABLE_ILP64" "-DUInt=unsigned __int64" "-i8")
   endif()
 else(ENABLE_ILP64)
-   add_definitions("-DUInt=unsigned int " "-DInt=int")
+   add_definitions("-DUInt=unsigned int " "-DInt=int" )
 ENDIF(ENABLE_ILP64)
 
 if(ENABLE_AOCL_PROGRESS)
@@ -197,7 +252,7 @@ if(ENABLE_AOCL_PROGRESS)
     add_definitions("-DAOCL_PROGRESS")
   endif()
 ENDIF(ENABLE_AOCL_PROGRESS)
-      message(STATUS "ENABLE_SET_LIB_VERSION : ${ENABLE_SET_LIB_VERSION} ")
+    message(STATUS "ENABLE_SET_LIB_VERSION : ${ENABLE_SET_LIB_VERSION} ")
 
 if(ENABLE_SET_LIB_VERSION)
     string(TIMESTAMP TODAY "%Y%m%d")
@@ -205,7 +260,8 @@ if(ENABLE_SET_LIB_VERSION)
     add_definitions("-DAOCL_SCALAPACK_VERSION=${LIBRARY_VERSION}")
 endif()
 
-ADD_DEFINITIONS( "-D${CDEFS}" "${CMAKE_ICC_FLAGS}" "${f2cflag}")
+ADD_DEFINITIONS( "-D${CDEFS}" "${f2cflag}")
+set(CMAKE_C_FLAGS " ${CMAKE_C_FLAGS} ${CMAKE_ICC_FLAGS} -I ${SL_FRAMEWORK_INCLUDE_PATH}/")
 
 # --------------------------------------------------
 # By default static library
@@ -214,7 +270,7 @@ OPTION(BUILD_STATIC_LIBS "Build static libraries" ON )
 
 # --------------------------------------------------
 # Subdirectories that need to be processed
-   
+
 macro(append_subdir_files variable dirname)
 get_directory_property(holder DIRECTORY ${dirname} DEFINITION ${variable})
 foreach(depfile ${holder})
@@ -233,22 +289,27 @@ IF(BLACS_LIBRARY)
   include(CheckFunctionExists)
   set(CMAKE_REQUIRED_LIBRARIES ${BLACS_LIBRARY})
   message(STATUS "--> BLACS supplied by user is ${BLACS_LIBRARY}.")
-  CHECK_FUNCTION_EXISTS("Cblacs_get" BLACS_FOUND)
+  CHECK_FUNCTION_EXISTS("Cblacs_get" CUSTOM_BLACS_FOUND)
   unset( CMAKE_REQUIRED_LIBRARIES )
-  message(STATUS "--> BLACS routine blacs_pinfo is found: ${BLACS_FOUND}.")
+  message(STATUS "--> BLACS routine blacs_pinfo is found: ${CUSTOM_BLACS_FOUND}.")
+
+  if(CUSTOM_BLACS_FOUND)
+     message(STATUS "--> BLACS supplied by user is WORKING, will use ${BLACS_LIBRARY}.")
+  else( CUSTOM_BLACS_FOUND )
+  #
+  # BLACS
+  #
+    add_subdirectory(BLACS)
+    append_subdir_files(blacs "BLACS/SRC")
+    message(STATUS "--> BLACS supplied by user is NOT WORKING, will use BLACS source code for building aocl-scalapack")
+  endif( CUSTOM_BLACS_FOUND )
+ELSE(BLACS_LIBRARY)
+    add_subdirectory(BLACS)
+    append_subdir_files(blacs "BLACS/SRC")
+    message(STATUS "--> Using default BLACS source code for building aocl-scalapack")
 ENDIF()
-if(BLACS_FOUND)
-   message(STATUS "--> BLACS supplied by user is WORKING, will use ${BLACS_LIBRARY}.")
-else( BLACS_FOUND )
-#
-# BLACS
-#
-  add_subdirectory(BLACS)
-  append_subdir_files(blacs "BLACS/SRC")
-  message(STATUS "--> BLACS supplied by user is NOT WORKING, will use BLACS source code for building aocl-scalapack")
-endif( BLACS_FOUND )
 
-
+unset(LAPACK_FOUND CACHE)
 message(STATUS "CHECKING BLAS AND LAPACK LIBRARIES")
 IF(LAPACK_LIBRARIES)
   include(CheckFortranFunctionExists)
@@ -274,15 +335,15 @@ else(LAPACK_FOUND)
       message(STATUS "--> LAPACK and BLAS were not found. Reference LAPACK and BLAS will be downloaded and installed")
       include(ExternalProject)
       ExternalProject_Add(
-		lapack
-		URL http://www.netlib.org/lapack/lapack.tgz
-		CMAKE_ARGS -DCMAKE_INSTALL_PREFIX:PATH=${SCALAPACK_BINARY_DIR}
+        lapack
+        URL http://www.netlib.org/lapack/lapack.tgz
+        CMAKE_ARGS -DCMAKE_INSTALL_PREFIX:PATH=${SCALAPACK_BINARY_DIR}
         PREFIX ${SCALAPACK_BINARY_DIR}/dependencies
       )
-	  if (UNIX)
+      if (UNIX)
          SET(LAPACK_LIBRARIES ${SCALAPACK_BINARY_DIR}/lib/liblapack.a CACHE STRING "LAPACK library" FORCE)
          SET(BLAS_LIBRARIES ${SCALAPACK_BINARY_DIR}/lib/libblas.a CACHE STRING "BLAS library" FORCE)
-	  else (UNIX) # On Windows
+      else (UNIX) # On Windows
          SET(LAPACK_LIBRARIES ${SCALAPACK_BINARY_DIR}/lib/liblapack.lib CACHE STRING "LAPACK library" FORCE)
          SET(BLAS_LIBRARIES ${SCALAPACK_BINARY_DIR}/lib/libblas.lib CACHE STRING "BLAS library" FORCE)
       endif (UNIX)
@@ -299,6 +360,13 @@ MESSAGE(STATUS "=========")
 #
 add_subdirectory(AOCL_DTL)
 append_subdir_files(dtl "AOCL_DTL")
+
+#
+# FRAMEWORK
+#
+add_subdirectory(FRAMEWORK)
+append_subdir_files(framework "FRAMEWORK")
+append_subdir_files(framework-C "FRAMEWORK")
 
 #
 # TOOLS
@@ -341,50 +409,52 @@ if(WIN32 AND BUILD_SHARED_LIBS)
 endif ()
 
 if (UNIX)
-  if(BLACS_FOUND)
-    add_library(scalapack ${dtl} ${tools} ${tools-C} ${extra_lapack} ${pblas} ${pblas-F} ${ptzblas} ${ptools} ${pbblas} ${redist} ${src} ${src-C})
+  if(CUSTOM_BLACS_FOUND)
+    add_library(scalapack ${dtl} ${framework} ${framework-C} ${tools} ${tools-C} ${extra_lapack} ${pblas} ${pblas-F} ${ptzblas} ${ptools} ${pbblas} ${redist} ${src} ${src-C})
+    custom_macros_for_each_scalapack_source (scalapack)
     target_link_libraries( scalapack ${BLACS_LIBRARY} ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES})
     scalapack_install_library(scalapack)
-  else(BLACS_FOUND)
-    add_library(scalapack ${dtl} ${blacs} ${tools} ${tools-C} ${extra_lapack} ${pblas} ${pblas-F} ${ptzblas} ${ptools} ${pbblas} ${redist} ${src} ${src-C})
+  else(CUSTOM_BLACS_FOUND)
+    add_library(scalapack ${dtl} ${framework} ${framework-C} ${blacs} ${tools} ${tools-C} ${extra_lapack} ${pblas} ${pblas-F} ${ptzblas} ${ptools} ${pbblas} ${redist} ${src} ${src-C})
+    custom_macros_for_each_scalapack_source (scalapack)
     target_link_libraries( scalapack ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES})
     scalapack_install_library(scalapack)
-  endif(BLACS_FOUND)
+  endif(CUSTOM_BLACS_FOUND)
 else (UNIX) # Need to separate Fortran and C Code
     if (CMAKE_C_COMPILER_ID MATCHES MSVC)
         # create Fortran objects and add to scalapack library first
-      if(BLACS_FOUND)
-        add_library(scalapack-F OBJECT  ${pblas-F} ${pbblas} ${ptzblas} ${tools} ${src} ${extra_lapack} )
-        add_library(scalapack $<TARGET_OBJECTS:scalapack-F> ${tools-C} ${pblas} ${ptools} ${redist} ${src-C})
+      if(CUSTOM_BLACS_FOUND)
+        add_library(scalapack-F OBJECT  ${pblas-F} ${pbblas} ${ptzblas} ${tools} ${framework} ${src} ${extra_lapack} )
+        add_library(scalapack $<TARGET_OBJECTS:scalapack-F> ${tools-C} ${dtl} ${framework-C} ${pblas} ${ptools} ${redist} ${src-C})
         target_link_libraries( scalapack ${BLACS_LIBRARY} ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES} ${MPI_LIBRARY})
         target_link_directories( scalapack PUBLIC ${CMAKE_IFORT_LIBDEPS_DIR})
         scalapack_install_library(scalapack)
-      else(BLACS_FOUND)
-        add_library(scalapack-F OBJECT  ${pblas-F} ${pbblas} ${ptzblas} ${tools} ${src} ${extra_lapack} )
-        add_library(scalapack $<TARGET_OBJECTS:scalapack-F> ${blacs} ${tools-C} ${pblas} ${ptools} ${redist} ${src-C})
+      else(CUSTOM_BLACS_FOUND)
+        add_library(scalapack-F OBJECT  ${pblas-F} ${pbblas} ${ptzblas} ${tools} ${framework} ${src} ${extra_lapack} )
+        add_library(scalapack $<TARGET_OBJECTS:scalapack-F> ${blacs} ${tools-C}  ${dtl} ${framework-C} ${pblas} ${ptools} ${redist} ${src-C})
         target_link_libraries( scalapack ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES} ${MPI_LIBRARY})
         target_link_directories( scalapack PUBLIC ${CMAKE_IFORT_LIBDEPS_DIR})
         scalapack_install_library(scalapack)
-      endif(BLACS_FOUND)
+      endif(CUSTOM_BLACS_FOUND)
     else (CMAKE_C_COMPILER_ID MATCHES Clang)
         # create C objects and add to scalapack library first
-      if(BLACS_FOUND)
-        add_library(scalapack-C OBJECT ${tools-C} ${pblas} ${ptools} ${redist} ${src-C})
+      if(CUSTOM_BLACS_FOUND)
+        add_library(scalapack-C OBJECT ${tools-C} ${dtl} ${framework-C} ${pblas} ${ptools} ${redist} ${src-C})
         target_link_libraries( scalapack-C ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES} ${MPI_LIBRARY})
         target_link_directories( scalapack-C PUBLIC ${CMAKE_IFORT_LIBDEPS_DIR})
-        add_library(scalapack $<TARGET_OBJECTS:scalapack-C> ${pblas-F} ${pbblas} ${ptzblas} ${tools} ${src} ${extra_lapack} )
+        add_library(scalapack $<TARGET_OBJECTS:scalapack-C> ${pblas-F} ${pbblas} ${ptzblas} ${tools} ${dtl} ${framework} ${src} ${extra_lapack} )
         target_link_libraries( scalapack ${BLACS_LIBRARY} ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES} ${MPI_LIBRARY})
         target_link_directories( scalapack PUBLIC ${CMAKE_IFORT_LIBDEPS_DIR})
         scalapack_install_library(scalapack)
-      else(BLACS_FOUND)
-        add_library(scalapack-C OBJECT ${blacs} ${tools-C} ${pblas} ${ptools} ${redist} ${src-C})
+      else(CUSTOM_BLACS_FOUND)
+        add_library(scalapack-C OBJECT ${blacs} ${tools-C} ${dtl} ${framework-C} ${pblas} ${ptools} ${redist} ${src-C})
         target_link_libraries( scalapack-C ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES} ${MPI_LIBRARY})
         target_link_directories( scalapack-C PUBLIC ${CMAKE_IFORT_LIBDEPS_DIR})
-        add_library(scalapack $<TARGET_OBJECTS:scalapack-C> ${pblas-F} ${pbblas} ${ptzblas} ${tools} ${src} ${extra_lapack} )
+        add_library(scalapack $<TARGET_OBJECTS:scalapack-C> ${pblas-F} ${pbblas} ${ptzblas} ${tools} ${framework} ${src} ${extra_lapack} )
         target_link_libraries( scalapack ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES} ${MPI_LIBRARY})
         target_link_directories( scalapack PUBLIC ${CMAKE_IFORT_LIBDEPS_DIR})
         scalapack_install_library(scalapack)
-      endif(BLACS_FOUND)
+      endif(CUSTOM_BLACS_FOUND)
     endif ()
 endif (UNIX)
 
@@ -393,7 +463,7 @@ if(${SCALAPACK_BUILD_TESTS})
   add_subdirectory(TESTING)
 endif()
 # --------------------------------------------------
-# CPACK Packaging 
+# CPACK Packaging
 
 SET(CPACK_PACKAGE_NAME "ScaLAPACK")
 SET(CPACK_PACKAGE_VENDOR "University of Tennessee, Univ. of California Berkeley, Univ. of Colorado Denver and NAG Ltd")
@@ -456,3 +526,4 @@ install(FILES
 install(EXPORT scalapack-targets
   DESTINATION lib/cmake/scalapack-${SCALAPACK_VERSION})
 
+file(COPY scalapack_test.sh DESTINATION ${SCALAPACK_BINARY_DIR})

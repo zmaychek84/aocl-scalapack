@@ -1,6 +1,9 @@
+*
+*     Copyright (c) 2022-23 Advanced Micro Devices, Inc.  All rights reserved.
+*
 *  -- ScaLAPACK routine --
-*     Copyright (c) 2020-22 Advanced Micro Devices, Inc.  All rights reserved.
-*     June 20, 2022
+*
+#include "SL_Context_fortran_include.h"
 *
       SUBROUTINE PDPOTRF( UPLO, N, A, IA, JA, DESCA, INFO )
 *
@@ -9,6 +12,7 @@
 *     and University of California, Berkeley.
 *     May 25, 2001
 *
+      USE LINK_TO_C_GLOBALS
 *     .. Scalar Arguments ..
       CHARACTER          UPLO
       INTEGER            IA, INFO, JA, N
@@ -153,10 +157,17 @@
       INTEGER            I, ICOFF, ICTXT, IROFF, J, JB, JN, MYCOL,
      $                   MYROW, NPCOL, NPROW
 *
+*     ..
 #ifdef AOCL_PROGRESS
-      INTEGER TOTAL_MPI_PROCESSES, LSTAGE, CURRENT_RANK
-      CHARACTER*7 API_NAME
+*     .. AOCL Progress variables ..
+      INTEGER TOTAL_MPI_PROCESSES, CURRENT_RANK, PROGRESS
+*
+*     .. Declaring 'API NAME' and its length as const objects
+*     .. API_NAME string terminated with 'NULL' character.
+      CHARACTER*8, PARAMETER :: API_NAME = FUNCTION_NAME // C_NULL_CHAR
+      INTEGER, PARAMETER :: LEN_API_NAME = 8
 #endif
+*     ..
 *     ..
 *     .. Local Arrays ..
       INTEGER            IDUM1( 1 ), IDUM2( 1 )
@@ -174,12 +185,40 @@
 *     .. Intrinsic Functions ..
       INTRINSIC          ICHAR, MIN, MOD
 *     ..
+*     .. LOG variables declaration ..
+*     ..
+*     BUFFER size: Function name and Process grid info (128 Bytes) +
+*       Variable names + Variable values(num_vars *10)
+      CHARACTER  BUFFER*256
+      CHARACTER*2, PARAMETER :: eos_str = '' // C_NULL_CHAR
 *     .. Executable Statements ..
+*
+*     Initialize framework context structure if not initialized
+*
+*
+      CALL AOCL_SCALAPACK_INIT( )
+*
+*
+*     Capture the subroutine entry in the trace file
+*
+      AOCL_DTL_TRACE_ENTRY_F
 *
 *     Get grid parameters
 *
       ICTXT = DESCA( CTXT_ )
       CALL BLACS_GRIDINFO( ICTXT, NPROW, NPCOL, MYROW, MYCOL )
+*
+*     Update the log buffer with the scalar arguments details,
+*     MPI process grid information and write to the log file
+*
+      IF( SCALAPACK_CONTEXT%IS_LOG_ENABLED.EQ.1 ) THEN
+         WRITE(BUFFER,102)  UPLO, IA, INFO, JA, N, NPROW,
+     $            NPCOL, MYROW, MYCOL, eos_str
+ 102     FORMAT('PDPOTRF inputs:,UPLO:',A5,',IA:',I5,',INFO:',I5,
+     $           ',JA:',I5,',N:',I5,',NPROW:',I5,
+     $           ',NPCOL:',I5,',MYROW:',I5,',MYCOL:',I5,A1)
+         AOCL_DTL_LOG_ENTRY_F
+      END IF
 *
 *     Test the input parameters
 *
@@ -214,19 +253,30 @@
 *
       IF( INFO.NE.0 ) THEN
          CALL PXERBLA( ICTXT, 'PDPOTRF', -INFO )
+*
+*        Capture the subroutine exit in the trace file
+*
+         AOCL_DTL_TRACE_EXIT_F
          RETURN
       END IF
 *
 *     Quick return if possible
 *
-      IF( N.EQ.0 )
-     $   RETURN
+      IF( N.EQ.0 ) THEN
+*
+*        Capture the subroutine exit in the trace file
+*
+         AOCL_DTL_TRACE_EXIT_F
+         RETURN
+      END IF
 *
 #ifdef AOCL_PROGRESS
-         LSTAGE = 7
-         API_NAME = 'PDPOTRF'
+*     Set the AOCL progress variables related to rank, processes
+*
+      IF( SCALAPACK_CONTEXT%IS_PROGRESS_ENABLED.EQ.1 ) THEN
          CURRENT_RANK = MYCOL+MYROW*NPCOL
          TOTAL_MPI_PROCESSES = NPROW*NPCOL
+      END IF
 #endif
 *
       CALL PB_TOPGET( ICTXT, 'Broadcast', 'Rowwise', ROWBTOP )
@@ -272,9 +322,19 @@
          DO 10 J = JN+1, JA+N-1, DESCA( NB_ )
             JB = MIN( N-J+JA, DESCA( NB_ ) )
             I = IA + J - JA
+*
 #ifdef AOCL_PROGRESS
-            CALL AOCL_SCALAPACK_PROGRESS ( API_NAME, LSTAGE,
-     $                 J, CURRENT_RANK, TOTAL_MPI_PROCESSES )
+*        Update the progress and callback if progress is enabled
+*
+            IF( SCALAPACK_CONTEXT%IS_PROGRESS_ENABLED.EQ.1 ) THEN
+*
+*           Capture the Loop count 'J' to a separate 'PROGRESS'
+*           variable to avoid the corruption at application side.
+*
+               PROGRESS = J
+               CALL AOCL_SCALAPACK_PROGRESS ( API_NAME, LEN_API_NAME,
+     $                PROGRESS, CURRENT_RANK, TOTAL_MPI_PROCESSES )
+            END IF
 #endif
 *
 *           Perform unblocked Cholesky factorization on JB block
@@ -341,9 +401,19 @@
          DO 20 J = JN+1, JA+N-1, DESCA( NB_ )
             JB = MIN( N-J+JA, DESCA( NB_ ) )
             I = IA + J - JA
+*
 #ifdef AOCL_PROGRESS
-            CALL AOCL_SCALAPACK_PROGRESS ( API_NAME, LSTAGE,
-     $                 J, CURRENT_RANK, TOTAL_MPI_PROCESSES )
+*        Update the progress and callback if progress is enabled
+*
+            IF( SCALAPACK_CONTEXT%IS_PROGRESS_ENABLED.EQ.1 ) THEN
+*
+*           Capture the Loop count 'J' to a separate 'PROGRESS'
+*           variable to avoid the corruption at application side.
+*
+               PROGRESS = J
+               CALL AOCL_SCALAPACK_PROGRESS ( API_NAME, LEN_API_NAME,
+     $                PROGRESS, CURRENT_RANK, TOTAL_MPI_PROCESSES )
+            END IF
 #endif
 *
 *           Perform unblocked Cholesky factorization on JB block
@@ -378,6 +448,10 @@
       CALL PB_TOPSET( ICTXT, 'Broadcast', 'Rowwise', ROWBTOP )
       CALL PB_TOPSET( ICTXT, 'Broadcast', 'Columnwise', COLBTOP )
 *
+*
+*     Capture the subroutine exit in the trace file
+*
+      AOCL_DTL_TRACE_EXIT_F
       RETURN
 *
 *     End of PDPOTRF
