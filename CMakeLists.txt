@@ -19,6 +19,9 @@ set(CMAKE_MODULE_PATH "${SCALAPACK_SOURCE_DIR}/CMAKE" ${CMAKE_MODULE_PATH})
 set(SL_FRAMEWORK_INCLUDE_PATH  "${SCALAPACK_SOURCE_DIR}/FRAMEWORK")
 
 # ------   Build Options List  -----------
+# Fortran to C Name Mangling build option
+set(CDEFS "NoChange" CACHE STRING "Naming strategy needed for a fortran routine to call a C routine")
+set_property(CACHE CDEFS PROPERTY STRINGS "NoChange" "UpCase" "Add_")
 
 # ILP64 build option
 option(ENABLE_ILP64 "Enable ILP64 " OFF)
@@ -32,6 +35,9 @@ option(ENABLE_DTL "Enable DTL feature " OFF)
 # ASAN testing option
 option(ENABLE_ASAN_TESTS "Enable Address sanitizer tests " OFF)
 
+# Coverage option
+option(ENABLE_COVERAGE "Enable code coverage" OFF)
+
 # Option: Include build number in the version string.
 option (ENABLE_SET_LIB_VERSION "Set library version" OFF)
 
@@ -44,6 +50,15 @@ option (ENABLE_LARGE_MATRIX_TESTING "Dynamic allocation of work buffer memory in
 
 if (WIN32 AND CMAKE_Fortran_COMPILER_ID MATCHES "Intel")
     set (CMAKE_IFORT_LIBDEPS_DIR "C:/Program Files (x86)/IntelSWTools/compilers_and_libraries/windows/compiler/lib/intel64_win" CACHE STRING "")
+    # set the "FORCE:MULTIPLE" option to handle linker errors due to some
+    # of the common functions of scalapack and lapack in case of static build.
+	if("${CDEFS}" STREQUAL "NoChange")
+	   set (CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} /names:lowercase")
+	elseif("${CDEFS}" STREQUAL "Add_")
+	   set (CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} /names:lowercase")
+	   set (CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} /assume:underscore")
+    endif ()
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /FORCE:MULTIPLE")
 endif()
 
 set(CMAKE_ICC_FLAGS " ")
@@ -75,15 +90,15 @@ endif(ENABLE_LARGE_MATRIX_TESTING)
 
 if (UNIX)
    if ("${CMAKE_C_COMPILER_ID}" STREQUAL "GNU")
-      set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -cpp -ffixed-line-length-none -I ${SL_FRAMEWORK_INCLUDE_PATH}/" )
+      set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -ffixed-line-length-none -I ${SL_FRAMEWORK_INCLUDE_PATH}/" )
    endif ()
    if ("${CMAKE_Fortran_COMPILER_ID}" STREQUAL "Flang")
-      set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -cpp -ffixed-line-length-132 -I ${SL_FRAMEWORK_INCLUDE_PATH}/" )
+      set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -ffixed-line-length-132 -I ${SL_FRAMEWORK_INCLUDE_PATH}/" )
    endif ()
    if ("${CMAKE_Fortran_COMPILER_ID}" STREQUAL "Intel")
-      set( CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -fltconsistency -fp_port -no-vec -cpp -I ${SL_FRAMEWORK_INCLUDE_PATH}/" )
+      set( CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -fltconsistency -fp-port -no-vec -I ${SL_FRAMEWORK_INCLUDE_PATH}/" )
    elseif ("${CMAKE_Fortran_COMPILER}" MATCHES "ifort" )
-      set( CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -fltconsistency -fp_port -no-vec -cpp -I ${SL_FRAMEWORK_INCLUDE_PATH}/" )
+      set( CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -fltconsistency -fp-port -no-vec -I ${SL_FRAMEWORK_INCLUDE_PATH}/" )
    endif ()
 
    if (("${CMAKE_C_COMPILER_ID}" STREQUAL "Intel") AND ( "${CMAKE_C_COMPILER}" MATCHES "icc" ) )
@@ -97,7 +112,7 @@ if (UNIX)
       message(STATUS "Found Intel icx compiler : ${CMAKE_ICC_FLAGS} ")
    endif ()
 else ()
-   set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -cpp -I ${SL_FRAMEWORK_INCLUDE_PATH}/ " )
+   set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -I ${SL_FRAMEWORK_INCLUDE_PATH}/ " )
 endif ()
 
 
@@ -207,14 +222,15 @@ set(PKG_CONFIG_DIR ${libdir}/pkgconfig)
 # BLACS Internal variables
 #
 #   Fortran Mangling, MPI Tests and BLACS settings
-#
+if(UNIX OR "${CDEFS}" STREQUAL "UpCase")
 include(FortranMangling)
 COMPILE(install_COMPILED)
 
 FORTRAN_MANGLING(CDEFS)
-#MESSAGE(STATUS "Setting CDEFS = ${CDEFS}")
-#set(CDEFS ${CDEFS} CACHE STRING "Fortran Mangling" FORCE)
-MESSAGE(STATUS "=========")
+endif()
+MESSAGE(STATUS "Setting CDEFS = ${CDEFS}")
+#set(CDEFS ${CDEFS} CACHE STRING "Fortran Mangling")
+ MESSAGE(STATUS "=========")
 
 # --------------------------------------------------
 # Compiler Flags
@@ -227,10 +243,7 @@ MESSAGE(STATUS "CMAKE_C_COMPILER_ID = ${CMAKE_C_COMPILER_ID}")
 MESSAGE(STATUS "CMAKE_Fortran_COMPILER_ID = ${CMAKE_Fortran_COMPILER_ID}")
 
 if(ENABLE_DTL)
-#Enable DTL for UNIX
-  if(UNIX)
-      add_definitions("-DAOCL_DTL ")
-  endif()
+  add_definitions("-DAOCL_DTL ")
 ENDIF(ENABLE_DTL)
 
 if(ENABLE_ILP64)
@@ -309,13 +322,29 @@ ELSE(BLACS_LIBRARY)
     message(STATUS "--> Using default BLACS source code for building aocl-scalapack")
 ENDIF()
 
+if(WIN32)
+  #specify openmp library to resolve multithreaded BLAS and LAPACK Libraries for static builds
+    SET(OpenMP_libomp_LIBRARY "C:/Program Files/LLVM/lib/libomp.lib" CACHE STRING "openmp library path")
+endif(WIN32)
+
+find_package(OpenMP)
+if (OPENMP_FOUND)
+    message(STATUS "Found Openmp Library : ${OPENMP_FOUND} ")
+else()
+    message (FATAL_ERROR "Openmp Library Not Found")
+endif()
+
 unset(LAPACK_FOUND CACHE)
 message(STATUS "CHECKING BLAS AND LAPACK LIBRARIES")
 IF(LAPACK_LIBRARIES)
   include(CheckFortranFunctionExists)
   message(STATUS "--> LAPACK supplied by user is ${LAPACK_LIBRARIES}.")
   if(BLAS_LIBRARIES)
-     set(CMAKE_REQUIRED_LIBRARIES ${LAPACK_LIBRARIES};${BLAS_LIBRARIES})
+     if(WIN32)
+       set(CMAKE_REQUIRED_LIBRARIES ${LAPACK_LIBRARIES};${BLAS_LIBRARIES};${OpenMP_libomp_LIBRARY})
+     else(WIN32)
+       set(CMAKE_REQUIRED_LIBRARIES ${LAPACK_LIBRARIES};${BLAS_LIBRARIES})
+     endif(WIN32)
   else(BLAS_LIBRARIES)
      set(CMAKE_REQUIRED_LIBRARIES ${LAPACK_LIBRARIES})
   ENDIF(BLAS_LIBRARIES)
@@ -420,6 +449,10 @@ if (UNIX)
     target_link_libraries( scalapack ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES})
     scalapack_install_library(scalapack)
   endif(CUSTOM_BLACS_FOUND)
+  if(ENABLE_COVERAGE)
+    target_compile_options(scalapack PUBLIC -fprofile-arcs  -ftest-coverage)
+    target_link_options(scalapack PUBLIC -fprofile-arcs  -ftest-coverage)
+  endif(ENABLE_COVERAGE)
 else (UNIX) # Need to separate Fortran and C Code
     if (CMAKE_C_COMPILER_ID MATCHES MSVC)
         # create Fortran objects and add to scalapack library first

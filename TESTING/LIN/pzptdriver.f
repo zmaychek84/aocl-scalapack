@@ -72,7 +72,11 @@
 *
 *     .. Parameters ..
       INTEGER            TOTMEM
+#ifndef DYNAMIC_WORK_MEM_ALLOC
       PARAMETER          ( TOTMEM = 3000000 )
+#else
+      PARAMETER          ( TOTMEM = 2100000000 )
+#endif
       INTEGER            BLOCK_CYCLIC_2D, CSRC_, CTXT_, DLEN_, DTYPE_,
      $                   LLD_, MB_, M_, NB_, N_, RSRC_
       PARAMETER          ( BLOCK_CYCLIC_2D = 1, DLEN_ = 9, DTYPE_ = 1,
@@ -80,22 +84,12 @@
      $                     RSRC_ = 7, CSRC_ = 8, LLD_ = 9 )
 *
       DOUBLE PRECISION   ZERO
-#ifndef DYNAMIC_WORK_MEM_ALLOC
       INTEGER            MEMSIZ, NTESTS, ZPLXSZ
       COMPLEX*16         PADVAL
       PARAMETER          ( ZPLXSZ = 16,
      $                     MEMSIZ = TOTMEM / ZPLXSZ, NTESTS = 20,
      $                     PADVAL = ( -9923.0D+0, -9923.0D+0 ),
      $                     ZERO = 0.0D+0 )
-#else
-      INTEGER            NTESTS, ZPLXSZ
-	  INTEGER, PARAMETER ::  MEMSIZ = 2100000000
-      COMPLEX*16         PADVAL
-      PARAMETER          ( ZPLXSZ = 16,
-     $                      NTESTS = 20,
-     $                     PADVAL = ( -9923.0D+0, -9923.0D+0 ),
-     $                     ZERO = 0.0D+0 )
-#endif
       INTEGER            INT_ONE
       PARAMETER          ( INT_ONE = 1 )
 *     ..
@@ -504,10 +498,10 @@
 *              For SPD Tridiagonal complex matrices, diagonal is stored
 *                as a real. Thus, compact D into half the space
 *
-        DO 10  H=1, NUMROC(N,NB,MYCOL,0,NPCOL)/2
+        DO H=1, NUMROC(N,NB,MYCOL,0,NPCOL)/2
                   MEM( IPA+INT_TEMP+H-1 ) = MEM( IPA+INT_TEMP+2*H-2 )
      $               +MEM( IPA+INT_TEMP+2*H-1 )*( 0.0D+0, 1.0D+0 )
-   10   CONTINUE
+   10   END DO
                IF( 2*(NUMROC(N,NB,MYCOL,0,NPCOL)/2).NE.
      $               NUMROC(N,NB,MYCOL,0,NPCOL) ) THEN
                   H=NUMROC(N,NB,MYCOL,0,NPCOL)/2+1
@@ -549,7 +543,7 @@
 *
 *              Loop over the different values for NRHS
 *
-               DO 20 HH = 1, NNR
+               DO HH = 1, NNR
 *
                   IERR( 1 ) = 0
 *
@@ -859,7 +853,7 @@
      $                            TMFLOPS2, PASSED
 *
                      END IF
-   20          CONTINUE
+   20          END DO
 *
 *
    30       CONTINUE

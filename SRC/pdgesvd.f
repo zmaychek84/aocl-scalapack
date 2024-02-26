@@ -327,12 +327,6 @@
 *     .. Intrinsic Functions ..
       INTRINSIC MAX,MIN,SQRT,DBLE
 *     ..
-*     .. LOG variables declaration ..
-*     ..
-*     BUFFER size: Function name and Process grid info (128 Bytes) +
-*       Variable names + Variable values(num_vars *10)
-      CHARACTER  BUFFER*384
-      CHARACTER*2, PARAMETER :: eos_str = '' // C_NULL_CHAR
 *     .. Executable Statements ..
 *
 *     Initialize framework context structure if not initialized
@@ -344,30 +338,30 @@
 *     Capture the subroutine entry in the trace file
 *
       AOCL_DTL_TRACE_ENTRY_F
-*     This is just to keep ftnchek happy
-*
-*     Capture the subroutine exit in the trace file
-*
-      AOCL_DTL_TRACE_EXIT_F
-      IF (BLOCK_CYCLIC_2D*DTYPE_*LLD_*MB_*M_*NB_*N_.LT.0) RETURN
-*
-      CALL BLACS_GRIDINFO(DESCA(CTXT_),NPROW,NPCOL,MYPROW,MYPCOL)
 *
 *     Update the log buffer with the scalar arguments details,
 *     MPI process grid information and write to the log file
 *
       IF( SCALAPACK_CONTEXT%IS_LOG_ENABLED.EQ.1 ) THEN
-         WRITE(BUFFER,102)  JOBU,JOBVT, IA,INFO,IU,IVT,
-     $           JA,JU,JVT,LWORK,M,N, NPROW, NPCOL, MYROW,
-     $            MYCOL, eos_str
- 102     FORMAT('PDGESVD inputs:,JOBU:',A5,',JOBVT:',A5,
-     $           ',IA:',I5,',INFO:',I5,',IU:',I5,',IVT:',I5,
-     $           ',JA:',I5,',JU:',I5,',JVT:',I5,
-     $           ',LWORK:',I5,',M:',I5,',N:',I5,',NPROW:',I5,
-     $           ',NPCOL:',I5 ,',MYROW:',I5,
-     $           ',MYCOL:',I5,A5)
+         WRITE(LOG_BUF,102)  JOBU,JOBVT, IA,INFO,IU,IVT,
+     $           JA,JU,JVT,LWORK,M,N, eos_str
+ 102     FORMAT('PDGESVD inputs: ,JOBU:',A5,', JOBVT:',A5,
+     $           ', IA:',I5,', INFO:',I5,', IU:',I5,
+     $           ', IVT:',I5,', JA:',I5,', JU:',I5,
+     $           ', JVT:',I5,', LWORK:',I5,', M:',I5,
+     $           ', N:',I5, A1 )
          AOCL_DTL_LOG_ENTRY_F
       END IF
+*     This is just to keep ftnchek happy
+      IF (BLOCK_CYCLIC_2D*DTYPE_*LLD_*MB_*M_*NB_*N_.LT.0)  THEN
+*
+*        Capture the subroutine exit in the trace file
+*
+         AOCL_DTL_TRACE_EXIT_F
+         RETURN
+      END IF
+*
+      CALL BLACS_GRIDINFO(DESCA(CTXT_),NPROW,NPCOL,MYPROW,MYPCOL)
       ISCALE = 0
       INFO = 0
 *

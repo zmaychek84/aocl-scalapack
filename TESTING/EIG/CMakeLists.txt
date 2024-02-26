@@ -24,10 +24,10 @@ add_executable(xchrd pchrddriver.f pchrdinfo.f pcgehdrv.f pclafchk.f ${cmatgen})
 add_executable(xzhrd pzhrddriver.f pzhrdinfo.f pzgehdrv.f pzlafchk.f ${zmatgen})
 
 if(MSVC)
-add_executable(xstrd pstrddriver.f psttrdtester.f pslatran.f pstrdinfo.f pssytdrv.f pslafchk.f ${TTRD_SRC}/pssyttrd.f xpjlaenv.f ${smatgen} ${FRAMEWORK_SRC}/SL_Context_module.f)
-add_executable(xdtrd pdtrddriver.f pdttrdtester.f pdlatran.f pdtrdinfo.f pdsytdrv.f pdlafchk.f ${TTRD_SRC}/pdsyttrd.f xpjlaenv.f ${dmatgen} ${FRAMEWORK_SRC}/SL_Context_module.f)
-add_executable(xctrd pctrddriver.f pcttrdtester.f pclatran.f pctrdinfo.f pchetdrv.f pclafchk.f ${TTRD_SRC}/pchettrd.f xpjlaenv.f ${cmatgen} ${FRAMEWORK_SRC}/SL_Context_module.f)
-add_executable(xztrd pztrddriver.f pzttrdtester.f pzlatran.f pztrdinfo.f pzhetdrv.f pzlafchk.f ${TTRD_SRC}/pzhettrd.f xpjlaenv.f ${zmatgen} ${FRAMEWORK_SRC}/SL_Context_module.f)
+add_executable(xstrd xpjlaenv.f SL_Context_module_eig.f pstrddriver.f psttrdtester.f pslatran.f pstrdinfo.f pssytdrv.f pslafchk.f ${TTRD_SRC}/pssyttrd.f ${smatgen})
+add_executable(xdtrd xpjlaenv.f SL_Context_module_eig.f pdtrddriver.f pdttrdtester.f pdlatran.f pdtrdinfo.f pdsytdrv.f pdlafchk.f ${TTRD_SRC}/pdsyttrd.f ${dmatgen})
+add_executable(xctrd xpjlaenv.f SL_Context_module_eig.f pctrddriver.f pcttrdtester.f pclatran.f pctrdinfo.f pchetdrv.f pclafchk.f ${TTRD_SRC}/pchettrd.f ${cmatgen})
+add_executable(xztrd xpjlaenv.f SL_Context_module_eig.f pztrddriver.f pzttrdtester.f pzlatran.f pztrdinfo.f pzhetdrv.f pzlafchk.f ${TTRD_SRC}/pzhettrd.f ${zmatgen})
 else()
 add_executable(xstrd pstrddriver.f psttrdtester.f pslatran.f pstrdinfo.f pssytdrv.f pslafchk.f xpjlaenv.f ${smatgen})
 add_executable(xdtrd pdtrddriver.f pdttrdtester.f pdlatran.f pdtrdinfo.f pdsytdrv.f pdlafchk.f xpjlaenv.f ${dmatgen})
@@ -68,49 +68,95 @@ pzsepchk.f pzsepqtq.f pzlatms.f pzseprtst.f pdsepinfo.f pzlagsy.f pzlasizesep.f 
 add_executable(xshseqr pshseqrdriver.f psmatgen2.f ${cmatgen})
 add_executable(xdhseqr pdhseqrdriver.f pdmatgen2.f ${cmatgen})
 
-target_link_libraries(xsbrd scalapack ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES})
-target_link_libraries(xdbrd scalapack ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES})
-target_link_libraries(xcbrd scalapack ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES})
-target_link_libraries(xzbrd scalapack ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES})
-
-target_link_libraries(xshrd scalapack ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES})
-target_link_libraries(xdhrd scalapack ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES})
-target_link_libraries(xchrd scalapack ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES})
-target_link_libraries(xzhrd scalapack ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES})
-
-target_link_libraries(xstrd scalapack ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES})
-target_link_libraries(xdtrd scalapack ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES})
-target_link_libraries(xctrd scalapack ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES})
-target_link_libraries(xztrd scalapack ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES})
-
-target_link_libraries(xssvd scalapack ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES})
-target_link_libraries(xdsvd scalapack ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES})
-
-target_link_libraries(xssep scalapack ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES})
-target_link_libraries(xdsep scalapack ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES})
-target_link_libraries(xcsep scalapack ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES})
-target_link_libraries(xzsep scalapack ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES})
-
-target_link_libraries(xsgsep scalapack ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES})
-target_link_libraries(xdgsep scalapack ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES})
-target_link_libraries(xcgsep scalapack ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES})
-target_link_libraries(xzgsep scalapack ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES})
-
-target_link_libraries(xsnep scalapack ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES})
-target_link_libraries(xdnep scalapack ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES})
-target_link_libraries(xcnep scalapack ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES})
-target_link_libraries(xznep scalapack ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES})
-
-target_link_libraries(xcevc scalapack ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES})
-target_link_libraries(xzevc scalapack ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES})
-
-target_link_libraries(xssyevr scalapack ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES})
-target_link_libraries(xdsyevr scalapack ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES})
-target_link_libraries(xcheevr scalapack ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES})
-target_link_libraries(xzheevr scalapack ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES})
-
-target_link_libraries(xshseqr scalapack ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES})
-target_link_libraries(xdhseqr scalapack ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES})
+if(WIN32)
+  target_link_libraries(xsbrd scalapack ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES} ${OpenMP_libomp_LIBRARY})
+  target_link_libraries(xdbrd scalapack ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES} ${OpenMP_libomp_LIBRARY})
+  target_link_libraries(xcbrd scalapack ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES} ${OpenMP_libomp_LIBRARY})
+  target_link_libraries(xzbrd scalapack ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES} ${OpenMP_libomp_LIBRARY})
+  
+  target_link_libraries(xshrd scalapack ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES} ${OpenMP_libomp_LIBRARY})
+  target_link_libraries(xdhrd scalapack ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES} ${OpenMP_libomp_LIBRARY})
+  target_link_libraries(xchrd scalapack ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES} ${OpenMP_libomp_LIBRARY})
+  target_link_libraries(xzhrd scalapack ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES} ${OpenMP_libomp_LIBRARY})
+  
+  target_link_libraries(xstrd scalapack ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES} ${OpenMP_libomp_LIBRARY})
+  target_link_libraries(xdtrd scalapack ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES} ${OpenMP_libomp_LIBRARY})
+  target_link_libraries(xctrd scalapack ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES} ${OpenMP_libomp_LIBRARY})
+  target_link_libraries(xztrd scalapack ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES} ${OpenMP_libomp_LIBRARY})
+  
+  target_link_libraries(xssvd scalapack ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES} ${OpenMP_libomp_LIBRARY})
+  target_link_libraries(xdsvd scalapack ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES} ${OpenMP_libomp_LIBRARY})
+  
+  target_link_libraries(xssep scalapack ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES} ${OpenMP_libomp_LIBRARY})
+  target_link_libraries(xdsep scalapack ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES} ${OpenMP_libomp_LIBRARY})
+  target_link_libraries(xcsep scalapack ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES} ${OpenMP_libomp_LIBRARY})
+  target_link_libraries(xzsep scalapack ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES} ${OpenMP_libomp_LIBRARY})
+  
+  target_link_libraries(xsgsep scalapack ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES} ${OpenMP_libomp_LIBRARY})
+  target_link_libraries(xdgsep scalapack ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES} ${OpenMP_libomp_LIBRARY})
+  target_link_libraries(xcgsep scalapack ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES} ${OpenMP_libomp_LIBRARY})
+  target_link_libraries(xzgsep scalapack ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES} ${OpenMP_libomp_LIBRARY})
+  
+  target_link_libraries(xsnep scalapack ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES} ${OpenMP_libomp_LIBRARY})
+  target_link_libraries(xdnep scalapack ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES} ${OpenMP_libomp_LIBRARY})
+  target_link_libraries(xcnep scalapack ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES} ${OpenMP_libomp_LIBRARY})
+  target_link_libraries(xznep scalapack ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES} ${OpenMP_libomp_LIBRARY})
+  
+  target_link_libraries(xcevc scalapack ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES} ${OpenMP_libomp_LIBRARY})
+  target_link_libraries(xzevc scalapack ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES} ${OpenMP_libomp_LIBRARY})
+  
+  target_link_libraries(xssyevr scalapack ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES} ${OpenMP_libomp_LIBRARY})
+  target_link_libraries(xdsyevr scalapack ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES} ${OpenMP_libomp_LIBRARY})
+  target_link_libraries(xcheevr scalapack ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES} ${OpenMP_libomp_LIBRARY})
+  target_link_libraries(xzheevr scalapack ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES} ${OpenMP_libomp_LIBRARY})
+  
+  target_link_libraries(xshseqr scalapack ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES} ${OpenMP_libomp_LIBRARY})
+  target_link_libraries(xdhseqr scalapack ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES} ${OpenMP_libomp_LIBRARY})
+else(WIN32)
+  target_link_libraries(xsbrd scalapack ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES})
+  target_link_libraries(xdbrd scalapack ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES})
+  target_link_libraries(xcbrd scalapack ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES})
+  target_link_libraries(xzbrd scalapack ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES})
+  
+  target_link_libraries(xshrd scalapack ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES})
+  target_link_libraries(xdhrd scalapack ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES})
+  target_link_libraries(xchrd scalapack ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES})
+  target_link_libraries(xzhrd scalapack ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES})
+  
+  target_link_libraries(xstrd scalapack ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES})
+  target_link_libraries(xdtrd scalapack ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES})
+  target_link_libraries(xctrd scalapack ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES})
+  target_link_libraries(xztrd scalapack ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES})
+  
+  target_link_libraries(xssvd scalapack ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES})
+  target_link_libraries(xdsvd scalapack ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES})
+  
+  target_link_libraries(xssep scalapack ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES})
+  target_link_libraries(xdsep scalapack ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES})
+  target_link_libraries(xcsep scalapack ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES})
+  target_link_libraries(xzsep scalapack ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES})
+  
+  target_link_libraries(xsgsep scalapack ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES})
+  target_link_libraries(xdgsep scalapack ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES})
+  target_link_libraries(xcgsep scalapack ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES})
+  target_link_libraries(xzgsep scalapack ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES})
+  
+  target_link_libraries(xsnep scalapack ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES})
+  target_link_libraries(xdnep scalapack ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES})
+  target_link_libraries(xcnep scalapack ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES})
+  target_link_libraries(xznep scalapack ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES})
+  
+  target_link_libraries(xcevc scalapack ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES})
+  target_link_libraries(xzevc scalapack ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES})
+  
+  target_link_libraries(xssyevr scalapack ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES})
+  target_link_libraries(xdsyevr scalapack ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES})
+  target_link_libraries(xcheevr scalapack ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES})
+  target_link_libraries(xzheevr scalapack ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES})
+  
+  target_link_libraries(xshseqr scalapack ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES})
+  target_link_libraries(xdhseqr scalapack ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES})
+endif(WIN32)
 
 if ("${CMAKE_Fortran_COMPILER_ID}" STREQUAL "GNU" AND CMAKE_Fortran_COMPILER_VERSION VERSION_GREATER_EQUAL 10)
     set( CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -std=legacy" )  # local to this directory

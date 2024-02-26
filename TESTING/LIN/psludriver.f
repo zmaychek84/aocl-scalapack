@@ -79,20 +79,16 @@
       PARAMETER          ( INTGSZ = 4 )
 #endif
 *
-#ifndef DYNAMIC_WORK_MEM_ALLOC
       INTEGER            MEMSIZ, NTESTS, REALSZ, TOTMEM
+#ifndef DYNAMIC_WORK_MEM_ALLOC
+      PARAMETER          ( TOTMEM = 2000000 )
+#else
+      PARAMETER          ( TOTMEM = 2100000000 )
+#endif
       REAL               PADVAL, ZERO
-      PARAMETER          ( REALSZ = 4, TOTMEM = 2000000,
+      PARAMETER          ( REALSZ = 4,
      $                     MEMSIZ = TOTMEM / REALSZ, NTESTS = 20,
      $                     PADVAL = -9923.0E+0, ZERO = 0.0E+0 )
-#else
-      INTEGER            NTESTS, REALSZ, TOTMEM
-      REAL               PADVAL, ZERO
-      PARAMETER          ( REALSZ = 4, TOTMEM = 2000000,
-     $                     NTESTS = 20,
-     $                     PADVAL = -9923.0E+0, ZERO = 0.0E+0 )
-	  INTEGER, PARAMETER ::  MEMSIZ = 2100000000
-#endif
 *     ..
 *     .. Local Scalars ..
       LOGICAL            CHECK, EST
@@ -604,7 +600,7 @@
 *
 *                 Loop over the different values for NRHS
 *
-                  DO 20 HH = 1, NNR
+                  DO HH = 1, NNR
 *
                      NRHS = NRVAL( HH )
 *
@@ -980,7 +976,7 @@
      $                               PASSED
                         END IF
    10                CONTINUE
-   20             CONTINUE
+   20             END DO
 *
                   IF( CHECK.AND.( SRESID.GT.THRESH ) ) THEN
 *

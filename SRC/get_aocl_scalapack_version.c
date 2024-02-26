@@ -20,15 +20,14 @@
 #define _VERSION_MAKE_STR(x) #x
 
 #ifdef __STDC__
-void get_aocl_scalapack_version_( char * version, int *ver_str_len )
+void get_aocl_scalapack_version_( char * version )
 #else
-void get_aocl_scalapack_version_( version, ver_str_len )
+void get_aocl_scalapack_version_( version )
    char * version;
-   int *ver_str_len;
 #endif
 {
 #ifdef AOCL_SCALAPACK_VERSION
-     char slmainversion[] = "AOCL-ScaLAPACK 4.1.0 ";
+     char slmainversion[] = "AOCL-ScaLAPACK 4.2.0 ";
      char slversion[1000];
      char scalapackversion[] = ", supports ScaLAPACK 2.2.0";
      int length, i;
@@ -51,12 +50,29 @@ void get_aocl_scalapack_version_( version, ver_str_len )
      }
 
      slversion[length] = '\0';
-     *ver_str_len = length;
      strcpy(version, slversion);
 #else
-    strcpy(version, "AOCL-ScaLAPACK 4.1.0, supports ScaLAPACK 2.2.0");
-    *ver_str_len = strlen("AOCL-ScaLAPACK 4.1.0, supports ScaLAPACK 2.2.0");
+    strcpy(version, "AOCL-ScaLAPACK 4.2.0, supports ScaLAPACK 2.2.0");
 #endif
 return;
+}
+
+/**
+    Wrapper functions for 'get_aocl_scalapack_version_' function
+    to enable Fortran to C calls.
+**/
+void get_aocl_scalapack_version( char * version )
+{
+	get_aocl_scalapack_version_( version );
+}
+
+void GET_AOCL_SCALAPACK_VERSION( char * version )
+{
+	get_aocl_scalapack_version_( version );
+}
+
+void GET_AOCL_SCALAPACK_VERSION_( char * version )
+{
+	get_aocl_scalapack_version_( version );
 }
 

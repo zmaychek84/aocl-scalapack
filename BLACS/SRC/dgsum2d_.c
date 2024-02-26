@@ -151,7 +151,7 @@ F_VOID_FUNC dgsum2d_(Int *ConTxt, F_CHAR scope, F_CHAR top, Int *m, Int *n,
       bp = BI_GetBuff(length*2);
       bp2 = &BI_AuxBuff;
       bp2->Buff = &bp->Buff[length];
-      BI_dmvcopy(Mpval(m), Mpval(n), A, tlda, bp->Buff);
+      BI_dmvcopy(Mpval(m), Mpval(n), A, tlda, (double *)bp->Buff);
    }
    bp->dtype = bp2->dtype = MPI_DOUBLE;
    bp->N = bp2->N = N;
@@ -164,13 +164,13 @@ F_VOID_FUNC dgsum2d_(Int *ConTxt, F_CHAR scope, F_CHAR top, Int *m, Int *n,
          ierr=MPI_Reduce(bp->Buff, bp2->Buff, bp->N, bp->dtype, MPI_SUM,
                        dest, ctxt->scp->comm);
          if (ctxt->scp->Iam == dest)
-	    BI_dvmcopy(Mpval(m), Mpval(n), A, tlda, bp2->Buff);
+	    BI_dvmcopy(Mpval(m), Mpval(n), A, tlda, (double *)bp2->Buff);
       }
       else
       {
          ierr=MPI_Allreduce(bp->Buff, bp2->Buff, bp->N, bp->dtype, MPI_SUM,
 		          ctxt->scp->comm);
-	 BI_dvmcopy(Mpval(m), Mpval(n), A, tlda, bp2->Buff);
+	 BI_dvmcopy(Mpval(m), Mpval(n), A, tlda, (double *)bp2->Buff);
       }
       if (BI_ActiveQ) BI_UpdateBuffs(NULL);
       return;
@@ -224,7 +224,7 @@ F_VOID_FUNC dgsum2d_(Int *ConTxt, F_CHAR scope, F_CHAR top, Int *m, Int *n,
    if (bp != &BI_AuxBuff)
    {
       if ( (ctxt->scp->Iam == dest) || (dest == -1) )
-         BI_dvmcopy(Mpval(m), Mpval(n), A, tlda, bp->Buff);
+         BI_dvmcopy(Mpval(m), Mpval(n), A, tlda, (double *)bp->Buff);
       BI_UpdateBuffs(bp);
    }
    else
@@ -233,3 +233,24 @@ F_VOID_FUNC dgsum2d_(Int *ConTxt, F_CHAR scope, F_CHAR top, Int *m, Int *n,
       BI_BuffIsFree(bp, 1);
    }
 }
+#if (INTFACE != C_CALL)
+/** Wrapper functions to support Fortran to C calls **/
+
+F_VOID_FUNC dgsum2d(Int *ConTxt, F_CHAR scope, F_CHAR top, Int *m, Int *n,
+                     double *A, Int *lda, Int *rdest, Int *cdest)
+{
+   dgsum2d_( ConTxt, scope, top, m, n, A, lda, rdest, cdest);
+}
+
+F_VOID_FUNC DGSUM2D(Int *ConTxt, F_CHAR scope, F_CHAR top, Int *m, Int *n,
+                     double *A, Int *lda, Int *rdest, Int *cdest)
+{
+   dgsum2d_( ConTxt, scope, top, m, n, A, lda, rdest, cdest);
+}
+
+F_VOID_FUNC DGSUM2D_(Int *ConTxt, F_CHAR scope, F_CHAR top, Int *m, Int *n,
+                     double *A, Int *lda, Int *rdest, Int *cdest)
+{
+   dgsum2d_( ConTxt, scope, top, m, n, A, lda, rdest, cdest);
+}
+#endif
