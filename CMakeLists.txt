@@ -1,6 +1,6 @@
 ##Copyright (C) 2021-2024, Advanced Micro Devices, Inc. All rights reserved.##
 
-cmake_minimum_required(VERSION 3.20)
+cmake_minimum_required(VERSION 3.22)
 project(SCALAPACK C Fortran)
 # Configure the warning and code coverage suppression file
 configure_file(
@@ -120,7 +120,7 @@ endif ()
 
 
 #
-#   MPI
+#  MPI
 #
 #set(MPI_BASE_DIR "/Users/julie/opt/openmpi/" CACHE PATH "MPI Path")
 #set(MPI_BASE_DIR "/Users/julie/opt/mpich2/" CACHE PATH "MPI Path")
