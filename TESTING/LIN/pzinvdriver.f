@@ -4,6 +4,7 @@
 *     University of Tennessee, Knoxville, Oak Ridge National Laboratory,
 *     and University of California, Berkeley.
 *     May 1, 1997
+*     Modifications Copyright (c) 2024 Advanced Micro Devices, Inc. All rights reserved.
 *
 *  Purpose
 *  =======
@@ -60,6 +61,7 @@
 *
 *  =====================================================================
 *
+      use,intrinsic :: ieee_arithmetic
 *     .. Parameters ..
       INTEGER            BLOCK_CYCLIC_2D, CSRC_, CTXT_, DLEN_, DTYPE_,
      $                   LLD_, MB_, M_, NB_, N_, RSRC_
@@ -101,6 +103,7 @@
      $                   NPROW, NQ, WORKIINV, WORKINV, WORKSIZ
       REAL               THRESH
       DOUBLE PRECISION   ANORM, FRESID, NOPS, RCOND, TMFLOPS
+      CHARACTER*8        API_NAME
 *     ..
 *     .. Local Arrays ..
       CHARACTER*3        MATTYP( NTESTS )
@@ -138,6 +141,15 @@
 *     ..
 *     .. Executable Statements ..
 *
+*     Take command-line arguments if requested
+      CHARACTER*80 arg
+      INTEGER numArgs, count
+      LOGICAL :: help_flag = .FALSE.
+      LOGICAL :: EX_FLAG = .FALSE., RES_FLAG = .FALSE.
+      INTEGER :: INF_PERCENT = 0
+      INTEGER :: NAN_PERCENT = 0
+      DOUBLE PRECISION :: X
+*
 *     Get starting information
 *
 #ifdef DYNAMIC_WORK_MEM_ALLOC
@@ -149,6 +161,36 @@
      $                NTESTS, NNB, NBVAL, NTESTS, NGRIDS, PVAL, NTESTS,
      $                QVAL, NTESTS, THRESH, MEM, IAM, NPROCS )
       CHECK = ( THRESH.GE.0.0E+0 )
+
+*     Get the number of command-line arguments
+      numArgs = command_argument_count()
+
+*     Process command-line arguments
+      do count = 1, numArgs, 2
+         call get_command_argument(count, arg)
+         select case (arg)
+            case ("-h", "--help")
+                  help_flag = .true.
+                  exit
+            case ("-inf")
+                  call get_command_argument(count + 1, arg)
+                  read(arg, *) INF_PERCENT
+                  IF (INF_PERCENT .GT. 0) THEN
+                     EX_FLAG = .TRUE.
+                  END IF
+            case ("-nan")
+                  call get_command_argument(count + 1, arg)
+                  read(arg, *) NAN_PERCENT
+                  IF (NAN_PERCENT .GT. 0) THEN
+                     EX_FLAG = .TRUE.
+                  END IF
+            case default
+                  print *, "Invalid option: ", arg
+                  help_flag = .true.
+                  exit
+            end select
+      end do
+*
 *
 *     Loop over the different matrix types
 *
@@ -236,12 +278,14 @@
 *
 *              Make sure matrix information is correct
 *
+#ifdef ENABLE_DRIVER_CHECK
                IERR( 1 ) = 0
-               IF( N.LT.1 ) THEN
+               IF( N.LT.0 ) THEN
                   IF( IAM.EQ.0 )
      $               WRITE( NOUT, FMT = 9999 ) 'MATRIX', 'N', N
                   IERR( 1 ) = 1
                END IF
+#endif
 *
 *              Make sure no one had error
 *
@@ -305,12 +349,30 @@
                   CALL IGSUM2D( ICTXT, 'All', ' ', 1, 1, IERR, 1, -1,
      $                          0 )
 *
+#ifdef ENABLE_DRIVER_CHECK
                   IF( IERR( 1 ).LT.0 ) THEN
                      IF( IAM.EQ.0 )
      $                  WRITE( NOUT, FMT = 9997 ) 'descriptor'
                      KSKIP = KSKIP + 1
                      GO TO 10
                   END IF
+#else
+                  IF(N .LT. 0 .AND. (IERR(1) .EQ. -2 .OR.
+     $              IERR(1) .EQ. -4 .OR. IERR(1) .EQ. -8 )) THEN
+*                   DESCINIT returns the correct error code,
+*                   MAIN API can be validated.
+*                   Do NOTHING
+                    WRITE( NOUT, FMT = 9984 ) 'N'
+*                   disable extreme flag for negative case
+                    EX_FLAG = .FALSE.
+                  ELSE IF(IERR(1) .LT. 0) THEN
+                     IF( IAM.EQ.0 )
+     $                  WRITE( NOUT, FMT = 9997 ) 'descriptor'
+                     KSKIP = KSKIP + 1
+                     GO TO 10
+                  END IF
+                  
+#endif
 *
 *                 Assign pointers into MEM for ScaLAPACK arrays, A is
 *                 allocated starting at position MEM( IPREPAD+1 )
@@ -421,23 +483,51 @@
 *
 *                    Generate a general diagonally dominant matrix A
 *
-                     CALL PZMATGEN( ICTXT, 'N', 'D', DESCA( M_ ),
+                     IF(EX_FLAG) THEN
+*                       The extreme-value generation module for
+*                       diagonally dominant matrices, requires
+*                       Matrix-type info such as Upper/Lower.
+*                       Hence, MTYP(1:1) is passed to MATGEN
+*                       MTYP(1:1) is 'U'/'L'/'N' (default-case)
+                       CALL PZMATGEN( ICTXT, MTYP(1:1), 'D',
+     $                              DESCA( M_ ),
      $                              DESCA( N_ ), DESCA( MB_ ),
      $                              DESCA( NB_ ), MEM( IPA ),
      $                              DESCA( LLD_ ), DESCA( RSRC_ ),
      $                              DESCA( CSRC_ ), IASEED, 0, NP, 0,
      $                              NQ, MYROW, MYCOL, NPROW, NPCOL )
+                    ELSE
+                      CALL PZMATGEN( ICTXT, 'N', 'D',
+     $                              DESCA( M_ ),
+     $                              DESCA( N_ ), DESCA( MB_ ),
+     $                              DESCA( NB_ ), MEM( IPA ),
+     $                              DESCA( LLD_ ), DESCA( RSRC_ ),
+     $                              DESCA( CSRC_ ), IASEED, 0, NP, 0,
+     $                              NQ, MYROW, MYCOL, NPROW, NPCOL )
+                    END IF
 *
                   ELSE IF( LSAMEN( 2, MTYP( 2:3 ), 'PD' ) ) THEN
 *
 *                    Generate a Hermitian positive definite matrix A
 *
-                     CALL PZMATGEN( ICTXT, 'H', 'D', DESCA( M_ ),
+                     IF(EX_FLAG) THEN
+*                      MTYP(1:1) is 'U'/'L'/'N' (default-case)
+                       CALL PZMATGEN( ICTXT, MTYP(1:1), 'D',
+     $                              DESCA( M_ ),
      $                              DESCA( N_ ), DESCA( MB_ ),
      $                              DESCA( NB_ ), MEM( IPA ),
      $                              DESCA( LLD_ ), DESCA( RSRC_ ),
      $                              DESCA( CSRC_ ), IASEED, 0, NP, 0,
      $                              NQ, MYROW, MYCOL, NPROW, NPCOL )
+                    ELSE
+                      CALL PZMATGEN( ICTXT, 'H', 'D',
+     $                              DESCA( M_ ),
+     $                              DESCA( N_ ), DESCA( MB_ ),
+     $                              DESCA( NB_ ), MEM( IPA ),
+     $                              DESCA( LLD_ ), DESCA( RSRC_ ),
+     $                              DESCA( CSRC_ ), IASEED, 0, NP, 0,
+     $                              NQ, MYROW, MYCOL, NPROW, NPCOL )
+                    END IF
 *
                   END IF
 *
@@ -463,7 +553,7 @@
 *
 *                 Need 1-norm of A for checking
 *
-                  IF( CHECK ) THEN
+                  IF( CHECK .AND. N.GT.0 ) THEN
 *
                      CALL PZFILLPAD( ICTXT, NP, NQ, MEM( IPA-IPREPAD ),
      $                               DESCA( LLD_ ), IPREPAD, IPOSTPAD,
@@ -575,7 +665,7 @@
      $                             MEM( IPPIV ), INFO )
                      CALL SLTIMER( 1 )
 *
-                     IF( CHECK ) THEN
+                     IF( CHECK .AND. N.GT.0 ) THEN
 *
 *                       Check for memory overwrite
 *
@@ -591,12 +681,13 @@
 *                    Perform the general matrix inversion
 *
                      CALL SLTIMER( 2 )
+                     API_NAME = 'PZGETRI'
                      CALL PZGETRI( N, MEM( IPA ), 1, 1, DESCA,
      $                             MEM( IPPIV ), MEM( IPW ), LWORK,
      $                             MEM( IPIW ), LIWORK, INFO )
                      CALL SLTIMER( 2 )
 *
-                     IF( CHECK ) THEN
+                     IF( CHECK .AND. N.GT.0 ) THEN
 *
 *                       Check for memory overwrite
 *
@@ -624,11 +715,12 @@
 *                    Perform the general matrix inversion
 *
                      CALL SLTIMER( 2 )
+                     API_NAME = 'PZTRTRI'
                      CALL PZTRTRI( UPLO, 'Non unit', N, MEM( IPA ), 1,
      $                             1, DESCA, INFO )
                      CALL SLTIMER( 2 )
 *
-                     IF( CHECK ) THEN
+                     IF( CHECK .AND. N.GT.0 ) THEN
 *
 *                       Check for memory overwrite
 *
@@ -647,7 +739,7 @@
      $                             INFO )
                      CALL SLTIMER( 1 )
 *
-                     IF( CHECK ) THEN
+                     IF( CHECK .AND. N.GT.0 ) THEN
 *
 *                       Check for memory overwrite
 *
@@ -661,11 +753,12 @@
 *                    inversion
 *
                      CALL SLTIMER( 2 )
+                     API_NAME = 'PZPOTRI'
                      CALL PZPOTRI( UPLO, N, MEM( IPA ), 1, 1, DESCA,
      $                             INFO )
                      CALL SLTIMER( 2 )
 *
-                     IF( CHECK ) THEN
+                     IF( CHECK .AND. N.GT.0 ) THEN
 *
 *                       Check for memory overwrite
 *
@@ -677,37 +770,67 @@
 *
                   END IF
 *
-                  IF( CHECK ) THEN
+                  IF( CHECK .AND. .NOT.(EX_FLAG)) THEN
 *
-                     CALL PZFILLPAD( ICTXT, WORKSIZ-IPOSTPAD, 1,
+                     IF(INFO.EQ.0 .AND. N.GT.0) THEN
+*
+                        CALL PZFILLPAD( ICTXT, WORKSIZ-IPOSTPAD, 1,
      $                               MEM( IPW-IPREPAD ),
      $                               WORKSIZ-IPOSTPAD, IPREPAD,
      $                               IPOSTPAD, PADVAL )
 *
-*                    Compute fresid = || inv(A)*A-I ||
+*                       Compute fresid = || inv(A)*A-I ||
 *
-                     CALL PZINVCHK( MTYP, N, MEM( IPA ), 1, 1, DESCA,
+                        CALL PZINVCHK( MTYP, N, MEM( IPA ), 1, 1, DESCA,
      $                              IASEED, ANORM, FRESID, RCOND,
      $                              MEM( IPW ) )
 *
-*                    Check for memory overwrite
+*                       Check for memory overwrite
 *
-                     CALL PZCHEKPAD( ICTXT, 'PZINVCHK', NP, NQ,
+                        CALL PZCHEKPAD( ICTXT, 'PZINVCHK', NP, NQ,
      $                               MEM( IPA-IPREPAD ),
      $                               DESCA( LLD_ ),
      $                               IPREPAD, IPOSTPAD, PADVAL )
-                     CALL PZCHEKPAD( ICTXT, 'PZINVCHK',
+                        CALL PZCHEKPAD( ICTXT, 'PZINVCHK',
      $                               WORKSIZ-IPOSTPAD, 1,
      $                               MEM( IPW-IPREPAD ),
      $                               WORKSIZ-IPOSTPAD, IPREPAD,
      $                               IPOSTPAD, PADVAL )
+                     END IF
 *
 *                    Test residual and detect NaN result
 *
-                     IF( FRESID.LE.THRESH .AND. INFO.EQ.0 .AND.
+                     IF(N.EQ.0 .AND. INFO.EQ.0) THEN
+*                       If N =0 this is the case of
+*                       early return from ScaLAPACK API.
+*                       If there is safe exit from API; pass this case
+                        KPASS = KPASS + 1
+                        WRITE( NOUT, FMT = 9985 ) KPASS, API_NAME
+                        PASSED = 'PASSED'
+                        GO TO 10
+                     ELSE IF( FRESID.LE.THRESH .AND. INFO.EQ.0 .AND.
      $                   ( (FRESID-FRESID) .EQ. 0.0D+0 ) ) THEN
                         KPASS = KPASS + 1
                         PASSED = 'PASSED'
+                     ELSE IF(N.LT.0 .AND.
+     $                      ((INFO.EQ.-1
+     $                          .AND. LSAMEN( 3, MTYP, 'GEN' )) .OR.
+     $                      (INFO.EQ.-3 .AND.
+     $                          LSAMEN( 2, MTYP( 2:3 ), 'TR' )) .OR.
+     $                      (INFO.EQ.-2 .AND.
+     $                          LSAMEN( 2, MTYP( 2:3 ), 'PD' )))) THEN
+*                       When N < 0/Invalid, PCGETRI INFO = -1
+*                       PTPOTRI INFO = -2 and PCTRTRI INFO = -3
+*                       Expected Error code for N < 0
+*                       Hence this case can be passed
+                        KPASS = KPASS + 1
+                        WRITE( NOUT, FMT = 9983 ) API_NAME
+                        PASSED = 'PASSED'
+*                       re-enable extreme flag for next case
+                        IF(INF_PERCENT .GT. 0 .OR.
+     $                        NAN_PERCENT .GT. 0) THEN
+                          EX_FLAG = .TRUE.
+                        END IF
                      ELSE
                         KFAIL = KFAIL + 1
                         IF( INFO.GT.0 ) THEN
@@ -719,12 +842,54 @@
 *
                   ELSE
 *
+*                    Extreme value case
+                     IF(N.EQ.0 .AND. INFO.EQ.0) THEN
+*                       If N =0 this is the case of
+*                       early return from ScaLAPACK API.
+*                       If there is safe exit from API; pass this case
+                        KPASS = KPASS + 1
+                        WRITE( NOUT, FMT = 9985 ) KPASS, API_NAME
+                        PASSED = 'PASSED'
+                        GO TO 10
+                     ELSE IF(EX_FLAG .AND. N.GT.0) THEN
+*                       Check presence of INF/NAN in output
+*                       Pass the case if present
+                        DO IK = 0, N-1
+                          DO JK = 1, N
+                            X = REAL(MEM(IK*N + JK))
+                              IF (isnan(X)) THEN
+*                                NAN DETECTED
+                                 RES_FLAG = .TRUE.
+                                 EXIT
+                              ELSE IF (.NOT.ieee_is_finite(
+     $                                    X)) THEN
+*                                INFINITY DETECTED
+                                 RES_FLAG = .TRUE.
+                                 EXIT
+                              END IF
+                          END DO
+                           IF(RES_FLAG) THEN
+                              EXIT
+                           END IF
+                        END DO
+                        IF (.NOT.(RES_FLAG)) THEN
+                           KFAIL = KFAIL + 1
+                           PASSED = 'FAILED'
+                        ELSE
+                           KPASS = KPASS + 1
+                           PASSED = 'PASSED'
+*                          RESET RESIDUAL FLAG
+                           RES_FLAG = .FALSE.
+                        END IF
+                        FRESID = FRESID - FRESID
+*
 *                    Don't perform the checking, only the timing
 *                    operation
-*
-                     KPASS = KPASS + 1
-                     FRESID = FRESID - FRESID
-                     PASSED = 'BYPASS'
+                     ELSE
+                       KPASS = KPASS + 1
+                       FRESID = FRESID - FRESID
+                       PASSED = 'BYPASS'
+                     END IF
 *
                   END IF
 *
@@ -735,7 +900,7 @@
 *
 *                 Print results
 *
-                  IF( MYROW.EQ.0 .AND. MYCOL.EQ.0  ) THEN
+                  IF( MYROW.EQ.0 .AND. MYCOL.EQ.0 ) THEN
 *
                      IF( LSAMEN( 3, MTYP, 'GEN' ) ) THEN
 *
@@ -861,6 +1026,13 @@
  9988 FORMAT( I5, ' tests skipped because of illegal input values.' )
  9987 FORMAT( 'END OF TESTS.' )
  9986 FORMAT( A )
+ 9985 FORMAT( '----------Test-',I3,' Passed but no compute was ',
+     $       'performed! [Safe exit from ', A,']-----------')
+ 9984 FORMAT(  A, ' < 0 case detected. ',
+     $        'Instead of driver file, This case will be handled',
+     $        'by the ScaLAPACK API.')
+ 9983 FORMAT( '----------Negative-Test Passed with expected',
+     $       ' ERROR CODE in INFO from ', A,']-----------')
 *
       STOP
 *

@@ -1,4 +1,4 @@
-'ScaLAPACK, Version 1.0, Matrix Inversion Testing input file'
+'AOCLScaLAPACK, Matrix Inversion Testing input file'
 'MPI machine.'
 'INV.out'			output file name (if any)
 6				device out

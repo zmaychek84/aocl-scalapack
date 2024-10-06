@@ -1,4 +1,4 @@
-'ScaLAPACK, Version 1.2, banded linear systems input file'
+'ScaLAPACK, banded linear systems input file'
 'MPI machine'
 ''                              output file name (if any)
 6                               device out
