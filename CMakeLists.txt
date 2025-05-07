@@ -1,6 +1,12 @@
-##Copyright (C) 2021-2024, Advanced Micro Devices, Inc. All rights reserved.##
+##Copyright (C) 2021-2025, Advanced Micro Devices, Inc. All rights reserved.##
 
-cmake_minimum_required(VERSION 3.22)
+cmake_minimum_required(VERSION 3.26)
+
+# Reading program version from file
+
+file(STRINGS "so_version" VERSION_DATA)
+list(JOIN VERSION_DATA "." PROJ_VERSION)
+
 project(SCALAPACK C Fortran)
 # Configure the warning and code coverage suppression file
 configure_file(
@@ -41,8 +47,8 @@ option(ENABLE_ASAN_TESTS "Enable Address sanitizer tests " OFF)
 # Coverage option
 option(ENABLE_COVERAGE "Enable code coverage" OFF)
 
-# Option: Include build number in the version string.
-option (ENABLE_SET_LIB_VERSION "Set library version" OFF)
+# Set custom library version number
+set(ENABLE_SET_LIB_VERSION "default_version" CACHE STRING "Set the library version")
 
 # Option: Dynamic allocation of work buffer memory in Test code
 # Helpful to test larger matrix sizes more than 2K
@@ -120,7 +126,7 @@ endif ()
 
 
 #
-#  MPI
+#   MPI
 #
 #set(MPI_BASE_DIR "/Users/julie/opt/openmpi/" CACHE PATH "MPI Path")
 #set(MPI_BASE_DIR "/Users/julie/opt/mpich2/" CACHE PATH "MPI Path")
@@ -256,9 +262,11 @@ ENDIF(ENABLE_DRIVER_CHECK)
 if(ENABLE_ILP64)
   if(UNIX)
     if (("${CMAKE_Fortran_COMPILER_ID}" STREQUAL "Intel") AND ( "${CMAKE_Fortran_COMPILER}" MATCHES "ifort" ) )
-      add_definitions("-DInt=long" "-DUInt=u_int64_t" "-DENABLE_ILP64" "-i8")
+      add_definitions("-DInt=long" "-DUInt=u_int64_t" "-DENABLE_ILP64")  
+      set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -i8")
     else (("${CMAKE_Fortran_COMPILER_ID}" STREQUAL "Intel") AND ( "${CMAKE_Fortran_COMPILER}" MATCHES "ifort" ) )
-      add_definitions("-DInt=int64_t" "-DUInt=u_int64_t" "-DENABLE_ILP64" "-fdefault-integer-8")
+      add_definitions("-DInt=int64_t" "-DUInt=u_int64_t" "-DENABLE_ILP64")  
+      set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -fdefault-integer-8")
     endif()
   else(UNIX)
    add_definitions("-DInt=__int64" "-DENABLE_ILP64" "-DUInt=unsigned __int64" "-i8")
@@ -267,18 +275,29 @@ else(ENABLE_ILP64)
    add_definitions("-DUInt=unsigned int " "-DInt=int" )
 ENDIF(ENABLE_ILP64)
 
+#if the flag is not set or set to a binary value, use the AOCL-VERSION
+if("${ENABLE_SET_LIB_VERSION}" MATCHES "^(default_version|OFF|ON)$")
+    string(TIMESTAMP TODAY "%Y%m%d")
+    if(UNIX)
+      set(AOCL_SCALAPACK_LINUX_VERSION TRUE)
+	    set(LIBRARY_VERSION "\"${PROJ_VERSION}\tBuild\t${TODAY}\"")
+    elseif(WIN32)
+      set( LIBRARY_VERSION "${PROJ_VERSION}\tBuild\t${TODAY}")
+    endif()
+    add_definitions("-DAOCL_SCALAPACK_VERSION=${LIBRARY_VERSION}")
+else()
+    if(UNIX)
+      set(AOCL_SCALAPACK_LINUX_VERSION TRUE)
+    endif()
+    add_definitions("-DAOCL_SCALAPACK_VERSION=${ENABLE_SET_LIB_VERSION}")
+endif()
+
 if(ENABLE_AOCL_PROGRESS)
   if(UNIX)
     add_definitions("-DAOCL_PROGRESS")
   endif()
 ENDIF(ENABLE_AOCL_PROGRESS)
     message(STATUS "ENABLE_SET_LIB_VERSION : ${ENABLE_SET_LIB_VERSION} ")
-
-if(ENABLE_SET_LIB_VERSION)
-    string(TIMESTAMP TODAY "%Y%m%d")
-    set( LIBRARY_VERSION "\tBuild\t${TODAY}")
-    add_definitions("-DAOCL_SCALAPACK_VERSION=${LIBRARY_VERSION}")
-endif()
 
 ADD_DEFINITIONS( "-D${CDEFS}" "${f2cflag}")
 set(CMAKE_C_FLAGS " ${CMAKE_C_FLAGS} ${CMAKE_ICC_FLAGS} -I ${SL_FRAMEWORK_INCLUDE_PATH}/")
@@ -489,6 +508,13 @@ if (UNIX)
       target_link_libraries( scalapack INTERFACE ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES})
     endif()
   endif(CUSTOM_BLACS_FOUND)
+  
+  #Add C-specific compile options to remove absolute path 
+  target_compile_options(scalapack PRIVATE  
+    $<$<COMPILE_LANGUAGE:C>:-fPIC>  
+    $<$<COMPILE_LANGUAGE:C>:-fmacro-prefix-map=${SCALAPACK_SOURCE_DIR}/=>  
+  ) 
+
   if(ENABLE_COVERAGE)
     target_compile_options(scalapack PUBLIC -fprofile-arcs  -ftest-coverage)
     target_link_options(scalapack PUBLIC -fprofile-arcs  -ftest-coverage)
@@ -576,9 +602,9 @@ endif()
 SET(CPACK_PACKAGE_NAME "ScaLAPACK")
 SET(CPACK_PACKAGE_VENDOR "University of Tennessee, Univ. of California Berkeley, Univ. of Colorado Denver and NAG Ltd")
 SET(CPACK_PACKAGE_DESCRIPTION_SUMMARY "ScaLAPACK- Linear Algebra Package")
-set(SCALAPACK_VERSION 2.1.0)
+set(SCALAPACK_VERSION 2.2.0)
 set(CPACK_PACKAGE_VERSION_MAJOR 2)
-set(CPACK_PACKAGE_VERSION_MINOR 1)
+set(CPACK_PACKAGE_VERSION_MINOR 2)
 set(CPACK_PACKAGE_VERSION_PATCH 0)
 set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE")
 SET(CPACK_PACKAGE_INSTALL_DIRECTORY "SCALAPACK")

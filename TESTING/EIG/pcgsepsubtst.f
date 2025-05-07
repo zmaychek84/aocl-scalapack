@@ -12,6 +12,7 @@
 *     University of Tennessee, Knoxville, Oak Ridge National Laboratory,
 *     and University of California, Berkeley.
 *     May 1, 1997
+*     Modifications Copyright (c) 2025 Advanced Micro Devices, Inc. All rights reserved.
 *
 *     .. Scalar Arguments ..
       LOGICAL            WKNOWN
@@ -423,6 +424,17 @@
      $              SIZEHEEVX, RWORK( 1+IPREPAD ), LWORK1,
      $              IWORK( 1+IPREPAD ), LIWORK, IFAIL( 1+IPREPAD ),
      $              ICLUSTR( 1+IPREPAD ), GAP( 1+IPREPAD ), INFO )
+*
+      IF ( N.LT.0 .AND. INFO.EQ.-4) THEN
+         WRITE( *, FMT = * ) 'PCHEGVX INFO=', INFO
+*        When N < 0/Invalid, PCHEGVX INFO = -4
+*        Expected Error code for N < 0
+*        Hence this case can be passed.
+         WRITE( *, FMT = 9980) 'PCHEGVX'
+*        else continue the checks
+         GO TO 160
+      END IF
+*
       CALL SLTIMER( 6 )
       CALL SLTIMER( 1 )
 *
@@ -658,7 +670,7 @@
          END IF
 *
 *
-         CALL IGAMX2D( DESCA( CTXT_ ), 'a', ' ', 1, 1, RESULT, 1, 1, 1,
+         CALL IGAMX2D( DESCA( CTXT_ ), 'a', ' ', 1, 1, INT(RESULT), 1, 1, 1,
      $                 -1, -1, 0 )
          IF( RESULT.NE.0 )
      $      GO TO 160
@@ -791,7 +803,7 @@
 *
 *     All processes should report the same result
 *
-      CALL IGAMX2D( DESCA( CTXT_ ), 'a', ' ', 1, 1, RESULT, 1, 1, 1, -1,
+      CALL IGAMX2D( DESCA( CTXT_ ), 'a', ' ', 1, 1, INT(RESULT), 1, 1, 1, -1,
      $              -1, 0 )
 *
   160 CONTINUE
@@ -820,6 +832,7 @@
  9983 FORMAT( 'ICLUSTR not zero terminated' )
  9982 FORMAT( 'IL, IU, VL or VU altered by PCHEGVX' )
  9981 FORMAT( 'NZ altered by PCHEGVX with JOBZ=N' )
+ 9980 FORMAT(  A, ' returned correct error code. Passing this case.')
 *
 *     End of PCGSEPSUBTST
 *

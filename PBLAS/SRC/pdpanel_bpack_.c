@@ -21,7 +21,7 @@ void pdpanel_bpack_(pd_panel *panel, Int *tpiv)
       to pack panel and ipiv */
    Int          nvecs, ivec, ldim, i;
    void         * * vecs = NULL;
-   Int          * vlen   = NULL;
+   int          * vlen   = NULL;
    MPI_Datatype * vtype  = NULL;
    MPI_Aint     * vdis   = NULL;
    char         * mat;
@@ -36,13 +36,13 @@ void pdpanel_bpack_(pd_panel *panel, Int *tpiv)
 
    /* Allocate temporary memory for buffers, len, disp and type */
    vecs  = (void       * *) malloc(nvecs * sizeof(void *));
-   vlen  = (Int          *) malloc(nvecs * sizeof(Int          *));
-   vtype = (MPI_Datatype *) malloc(nvecs * sizeof(MPI_Datatype *));
-   vdis  = (MPI_Aint   * *) malloc(nvecs * sizeof(MPI_Aint   * *));
+   vlen  = (int          *) malloc(nvecs * sizeof(int));
+   vtype = (MPI_Datatype *) malloc(nvecs * sizeof(MPI_Datatype));
+   vdis  = (MPI_Aint     *) malloc(nvecs * sizeof(MPI_Aint));
 
    /* local starting location of broadcast mem and leading dim */
    ldim = panel->ldm;
-   mat  = panel->pmem;
+   mat  = (char *) panel->pmem;
 
    /* Pack the columns of panel */
    for(i = 0; i < panel->JB; i++)

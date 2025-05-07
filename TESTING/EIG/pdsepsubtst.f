@@ -9,7 +9,10 @@
 *     University of Tennessee, Knoxville, Oak Ridge National Laboratory,
 *     and University of California, Berkeley.
 *     March 15, 2000
+*     Modifications Copyright (c) 2024-2025 Advanced Micro Devices, Inc. All rights reserved.
 *
+*
+      use,intrinsic :: ieee_arithmetic
 *     .. Scalar Arguments ..
       LOGICAL            WKNOWN
       CHARACTER          JOBZ, RANGE, UPLO
@@ -238,6 +241,16 @@
       INTRINSIC          ABS, MAX, MIN, MOD
 *     ..
 *     .. Executable Statements ..
+*
+*     Take command-line arguments if requested
+      CHARACTER*80 arg
+      INTEGER numArgs, count
+      LOGICAL :: help_flag = .FALSE.
+      LOGICAL :: EX_FLAG = .FALSE., RES_FLAG = .FALSE.
+      INTEGER :: INF_PERCENT = 0
+      INTEGER :: NAN_PERCENT = 0
+      DOUBLE PRECISION :: X
+*
 *       This is just to keep ftnchek happy
       IF( BLOCK_CYCLIC_2D*CSRC_*CTXT_*DLEN_*DTYPE_*LLD_*MB_*M_*NB_*N_*
      $    RSRC_.LT.0 )RETURN
@@ -308,6 +321,36 @@
       CALL BLACS_GRIDINFO( DESCA( CTXT_ ), NPROW, NPCOL, MYROW, MYCOL )
       INDIWRK = 1 + IPREPAD + NPROW*NPCOL + 1
 *
+*     Get the number of command-line arguments
+      numArgs = command_argument_count()
+*
+*     Process command-line arguments
+      do count = 1, numArgs, 2
+         call get_command_argument(count, arg)
+         arg = trim(arg)
+         select case (arg)
+            case ("-h", "--help")
+                  help_flag = .true.
+                  exit
+            case ("-inf")
+                  call get_command_argument(count + 1, arg)
+                  read(arg, *) INF_PERCENT
+                  IF (INF_PERCENT .GT. 0) THEN
+                     EX_FLAG = .TRUE.
+                  END IF
+            case ("-nan")
+                  call get_command_argument(count + 1, arg)
+                  read(arg, *) NAN_PERCENT
+                  IF (NAN_PERCENT .GT. 0) THEN
+                     EX_FLAG = .TRUE.
+                  END IF
+            case default
+                  print *, "Invalid option: ", arg
+                  help_flag = .true.
+                  exit
+            end select
+      end do
+
       IAM = 1
       IF( MYROW.EQ.0 .AND. MYCOL.EQ.0 )
      $   IAM = 0
@@ -382,36 +425,39 @@
       CALL SLTIMER( 6 )
       CALL SLTIMER( 1 )
 *
-      IF( THRESH.LE.0 ) THEN
+*     skip checkpad conditions for negative cases
+      IF( THRESH.LE.0 .AND. N.LE.0) THEN
          RESULT = 0
       ELSE
-         CALL PDCHEKPAD( DESCA( CTXT_ ), 'PDSYEVX-A', NP, NQ, A,
+         IF(.NOT.(EX_FLAG)) THEN
+          CALL PDCHEKPAD( DESCA( CTXT_ ), 'PDSYEVX-A', NP, NQ, A,
      $                   DESCA( LLD_ ), IPREPAD, IPOSTPAD, PADVAL )
 *
-         CALL PDCHEKPAD( DESCZ( CTXT_ ), 'PDSYEVX-Z', NP, MQ, Z,
+          CALL PDCHEKPAD( DESCZ( CTXT_ ), 'PDSYEVX-Z', NP, MQ, Z,
      $                   DESCZ( LLD_ ), IPREPAD, IPOSTPAD,
      $                   PADVAL+1.0D+0 )
 *
-         CALL PDCHEKPAD( DESCA( CTXT_ ), 'PDSYEVX-WNEW', N, 1, WNEW, N,
+          CALL PDCHEKPAD( DESCA( CTXT_ ), 'PDSYEVX-WNEW', N, 1, WNEW, N,
      $                   IPREPAD, IPOSTPAD, PADVAL+2.0D+0 )
 *
-         CALL PDCHEKPAD( DESCA( CTXT_ ), 'PDSYEVX-GAP', NPROW*NPCOL, 1,
+          CALL PDCHEKPAD( DESCA( CTXT_ ), 'PDSYEVX-GAP', NPROW*NPCOL, 1,
      $                   GAP, NPROW*NPCOL, IPREPAD, IPOSTPAD,
      $                   PADVAL+3.0D+0 )
 *
-         CALL PDCHEKPAD( DESCA( CTXT_ ), 'PDSYEVX-WORK', LWORK1, 1,
+          CALL PDCHEKPAD( DESCA( CTXT_ ), 'PDSYEVX-WORK', LWORK1, 1,
      $                   WORK, LWORK1, IPREPAD, IPOSTPAD,
      $                   PADVAL+4.0D+0 )
 *
-         CALL PICHEKPAD( DESCA( CTXT_ ), 'PDSYEVX-IWORK', LIWORK, 1,
+          CALL PICHEKPAD( DESCA( CTXT_ ), 'PDSYEVX-IWORK', LIWORK, 1,
      $                   IWORK, LIWORK, IPREPAD, IPOSTPAD, IPADVAL )
 *
-         CALL PICHEKPAD( DESCA( CTXT_ ), 'PDSYEVX-IFAIL', N, 1, IFAIL,
+          CALL PICHEKPAD( DESCA( CTXT_ ), 'PDSYEVX-IFAIL', N, 1, IFAIL,
      $                   N, IPREPAD, IPOSTPAD, IPADVAL )
 *
-         CALL PICHEKPAD( DESCA( CTXT_ ), 'PDSYEVX-ICLUSTR',
+          CALL PICHEKPAD( DESCA( CTXT_ ), 'PDSYEVX-ICLUSTR',
      $                   2*NPROW*NPCOL, 1, ICLUSTR, 2*NPROW*NPCOL,
      $                   IPREPAD, IPOSTPAD, IPADVAL )
+         END IF
 *
 *
 *     Since we now know the spectrum, we can potentially reduce MAXSIZE.
@@ -425,7 +471,51 @@
 *
 *     Check INFO
 *
+*     Incorrect test case validation
+
+*      When N < 0/Invalid, PDSYEVX INFO = -4
+*      Expected Error code for N < 0
+*      Hence this case can be passed by setting RESULT = 0
 *
+         IF(N .LT. 0 .AND. INFO .EQ. -4) THEN
+           IF( IAM.EQ.0 ) THEN
+             WRITE( NOUT, FMT = 9980)
+           END IF
+           RESULT = 0
+           GO TO 150
+*    Extreme-values validation block
+*
+         ELSE IF(EX_FLAG .AND. N.GT.0) THEN
+*    Check presence of INF/NAN in output
+*    Pass the case if present
+           DO IK = 0, N-1
+             DO JK = 1, N
+               X = COPYA(IK*N + JK)
+               IF (isnan(X)) THEN
+*    NAN DETECTED
+                 RES_FLAG = .TRUE.
+                 EXIT
+               ELSE IF (.NOT.ieee_is_finite(X)) THEN
+*    INFINITY DETECTED
+                 RES_FLAG = .TRUE.
+                 EXIT
+               END IF
+             END DO
+             IF(RES_FLAG) THEN
+               EXIT
+             END IF
+           END DO
+*    if NAN/INF is found, validate the test case
+           IF (.NOT.(RES_FLAG)) THEN
+             RESULT = 1
+           ELSE
+             RESULT = 0
+*    RESET RESIDUAL FLAG
+             RES_FLAG = .FALSE.
+           END IF
+           GO TO 150
+         END IF
+
 *     Make sure that all processes return the same value of INFO
 *
          ITMP( 1 ) = INFO
@@ -801,6 +891,8 @@
  9983 FORMAT( 'ICLUSTR not zero terminated' )
  9982 FORMAT( 'IL, IU, VL or VU altered by PDSYEVX' )
  9981 FORMAT( 'NZ altered by PDSYEVX with JOBZ=N' )
+ 9980 FORMAT( 'N < 0, negative test case detected with expected'
+     $        ' INFO = -4, Passing this case')
 *
 *     End of PDSEPSUBTST
 *

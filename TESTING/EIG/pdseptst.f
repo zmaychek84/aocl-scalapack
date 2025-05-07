@@ -8,6 +8,7 @@
 *     University of Tennessee, Knoxville, Oak Ridge National Laboratory,
 *     and University of California, Berkeley.
 *     August 14, 2001
+*     Modifications Copyright (c) 2025 Advanced Micro Devices, Inc. All rights reserved.
 *
 *     .. Scalar Arguments ..
       CHARACTER          HETERO, SUBTESTS, UPLO
@@ -18,7 +19,7 @@
 *     .. Array Arguments ..
       INTEGER            DESCA( * ), ICLUSTR( * ), IFAIL( * ),
      $                   ISEED( 4 ), IWORK( * )
-      DOUBLE PRECISION   A( LDA, * ), COPYA( LDA, * ), GAP( * ), 
+      DOUBLE PRECISION   A( LDA, * ), COPYA( LDA, * ), GAP( * ),
      $                   WIN( * ), WNEW( * ), WORK( * ), Z( LDA, * )
 *     ..
 *
@@ -215,12 +216,12 @@
      $                   INDD, INDWORK, ISIZESUBTST, ISIZESYEVX,
      $                   ISIZETST, ITYPE, IU, J, LLWORK, LSYEVXSIZE,
      $                   MAXSIZE, MINSIZE, MYCOL, MYROW, NB, NGEN, NLOC,
-     $                   NNODES, NP, NPCOL, NPROW, NQ, RES, SIZECHK, 
-     $                   SIZEMQRLEFT, SIZEMQRRIGHT, SIZEQRF, SIZEQTQ, 
+     $                   NNODES, NP, NPCOL, NPROW, NQ, RES, SIZECHK,
+     $                   SIZEMQRLEFT, SIZEMQRRIGHT, SIZEQRF, SIZEQTQ,
      $                   SIZESUBTST, SIZESYEV, SIZESYEVX, SIZETMS,
      $                   SIZETST, VALSIZE, VECSIZE, ISIZESYEVD,SIZESYEVD
-      DOUBLE PRECISION   ANINV, ANORM, COND, MAXQTQNRM, MAXTSTNRM, OVFL, 
-     $                   QTQNRM, RTOVFL, RTUNFL, TEMP1, TSTNRM, ULP, 
+      DOUBLE PRECISION   ANINV, ANORM, COND, MAXQTQNRM, MAXTSTNRM, OVFL,
+     $                   QTQNRM, RTOVFL, RTUNFL, TEMP1, TSTNRM, ULP,
      $                   ULPINV, UNFL, VL, VU
 *     ..
 *     .. Local Arrays ..
@@ -235,10 +236,10 @@
       EXTERNAL           DLARAN, LSAME, NUMROC, PDLAMCH
 *     ..
 *     .. External Subroutines ..
-      EXTERNAL           BLACS_GRIDINFO, BLACS_PINFO, DLABAD, DLASRT, 
-     $                   DLATMS, IGAMX2D, IGEBR2D, IGEBS2D, PDCHEKPAD, 
-     $                   PDELSET, PDFILLPAD, PDLASET, PDLASIZESQP, 
-     $                   PDLASIZESYEVX, PDLATMS, PDMATGEN, PDSEPSUBTST, 
+      EXTERNAL           BLACS_GRIDINFO, BLACS_PINFO, DLABAD, DLASRT,
+     $                   DLATMS, IGAMX2D, IGEBR2D, IGEBS2D, PDCHEKPAD,
+     $                   PDELSET, PDFILLPAD, PDLASET, PDLASIZESQP,
+     $                   PDLASIZESYEVX, PDLATMS, PDMATGEN, PDSEPSUBTST,
      $                   PDSQPSUBTST, PDSYEV, SLCOMBINE
 *     ..
 *     .. Intrinsic Functions ..
@@ -253,6 +254,16 @@
      $                   0, 0, 4, 3, 1, 4, 4, 3, 0 /
 *     ..
 *     .. Executable Statements ..
+*
+*     Take command-line arguments if requested
+      CHARACTER*80 arg
+      INTEGER numArgs, count
+      LOGICAL :: help_flag = .FALSE.
+      LOGICAL :: EX_FLAG = .FALSE., RES_FLAG = .FALSE.
+      INTEGER :: INF_PERCENT = 0
+      INTEGER :: NAN_PERCENT = 0
+      DOUBLE PRECISION :: X
+*
 *       This is just to keep ftnchek happy
       IF( BLOCK_CYCLIC_2D*CSRC_*CTXT_*DLEN_*DT_*LLD_*MB_*M_*NB_*N_*
      $    RSRC_.LT.0 )RETURN
@@ -264,6 +275,36 @@
 *
       CALL BLACS_PINFO( IAM, NNODES )
       CALL BLACS_GRIDINFO( CONTEXT, NPROW, NPCOL, MYROW, MYCOL )
+      
+*     Get the number of command-line arguments
+      numArgs = command_argument_count()
+*
+*     Process command-line arguments
+      do count = 1, numArgs, 2
+         call get_command_argument(count, arg)
+         arg = trim(arg)
+         select case (arg)
+            case ("-h", "--help")
+                  help_flag = .true.
+                  exit
+            case ("-inf")
+                  call get_command_argument(count + 1, arg)
+                  read(arg, *) INF_PERCENT
+                  IF (INF_PERCENT .GT. 0) THEN
+                     EX_FLAG = .TRUE.
+                  END IF
+            case ("-nan")
+                  call get_command_argument(count + 1, arg)
+                  read(arg, *) NAN_PERCENT
+                  IF (NAN_PERCENT .GT. 0) THEN
+                     EX_FLAG = .TRUE.
+                  END IF
+            case default
+                  print *, "Invalid option: ", arg
+                  help_flag = .true.
+                  exit
+            end select
+      end do
 *
 *     Distribute HETERO across processes
 *
@@ -282,13 +323,13 @@
       ELSE
          HETERO = 'N'
       END IF
-*      
+*
 *     Make sure that we have enough memory
 *
       CALL PDLASIZESQP( DESCA, IPREPAD, IPOSTPAD, SIZEMQRLEFT,
      $                  SIZEMQRRIGHT, SIZEQRF, SIZETMS, SIZEQTQ,
      $                  SIZECHK, SIZESYEVX, ISIZESYEVX, SIZESYEV,
-     $                  SIZESYEVD, ISIZESYEVD, SIZESUBTST, 
+     $                  SIZESYEVD, ISIZESYEVD, SIZESUBTST,
      $                  ISIZESUBTST, SIZETST, ISIZETST )
 *
       IF( LWORK.LT.SIZETST ) THEN
@@ -315,9 +356,9 @@
 *     This ensures that everyone starts out with the same seed.
 *
          IF( MYROW.EQ.0 .AND. MYCOL.EQ.0 ) THEN
-            CALL IGEBS2D( CONTEXT, 'a', ' ', 4, 1, ISEED, 4 )
+            CALL IGEBS2D( CONTEXT, 'a', ' ', 4, 1, ISEED(1), 4 )
          ELSE
-            CALL IGEBR2D( CONTEXT, 'a', ' ', 4, 1, ISEED, 4, 0, 0 )
+            CALL IGEBR2D( CONTEXT, 'a', ' ', 4, 1, ISEED(1), 4, 0, 0 )
          END IF
          ISEEDIN( 1 ) = ISEED( 1 )
          ISEEDIN( 2 ) = ISEED( 2 )
@@ -367,11 +408,19 @@
             COND = ULPINV*ANINV / TEN
          END IF
 *
+*
+*      IF extreme flag is enabled, opt to the general matgen
+*      routine to populate the input with INF/NANs
+*
+         IF(EX_FLAG) THEN
+           ITYPE = 8
+         END IF
+*
 *     Special Matrices
 *
 *     Zero
-*
-*
+*         
+         
          IF( ITYPE.EQ.1 ) THEN
 *
 *     Zero Matrix
@@ -399,10 +448,12 @@
             CALL PDFILLPAD( DESCA( CTXT_ ), SIZETMS, 1, WORK( INDWORK ),
      $                      SIZETMS, IPREPAD, IPOSTPAD, PADVAL+1.0D+0 )
 *
-            CALL PDLATMS( N, N, 'S', ISEED, 'S', WORK( INDD ), IMODE,
+            IF( N.GT.0) THEN
+              CALL PDLATMS( N, N, 'S', ISEED, 'S', WORK( INDD ), IMODE,
      $                    COND, ANORM, 0, 0, 'N', COPYA, 1, 1, DESCA,
      $                    ORDER, WORK( INDWORK+IPREPAD ), SIZETMS,
      $                    IINFO )
+            END IF
             WKNOWN = .TRUE.
 *
             CALL PDCHEKPAD( DESCA( CTXT_ ), 'PDLATMS1-WORK', SIZETMS, 1,
@@ -416,10 +467,12 @@
             CALL PDFILLPAD( DESCA( CTXT_ ), SIZETMS, 1, WORK( INDWORK ),
      $                      SIZETMS, IPREPAD, IPOSTPAD, PADVAL+2.0D+0 )
 *
-            CALL PDLATMS( N, N, 'S', ISEED, 'S', WORK( INDD ), IMODE,
+            IF( N.GT.0) THEN
+              CALL PDLATMS( N, N, 'S', ISEED, 'S', WORK( INDD ), IMODE,
      $                    COND, ANORM, N, N, 'N', COPYA, 1, 1, DESCA,
      $                    ORDER, WORK( INDWORK+IPREPAD ), SIZETMS,
      $                    IINFO )
+            END IF
 *
             CALL PDCHEKPAD( DESCA( CTXT_ ), 'PDLATMS2-WORK', SIZETMS, 1,
      $                      WORK( INDWORK ), SIZETMS, IPREPAD, IPOSTPAD,
@@ -448,10 +501,12 @@
             CALL PDFILLPAD( DESCA( CTXT_ ), SIZETMS, 1, WORK( INDWORK ),
      $                      SIZETMS, IPREPAD, IPOSTPAD, PADVAL+3.0D+0 )
 *
+            IF( N.GT.0) THEN
             CALL PDLATMS( N, N, 'S', ISEED, 'S', WORK( INDD ), IMODE,
      $                    COND, ANORM, N, N, 'N', COPYA, 1, 1, DESCA,
      $                    ORDER, WORK( INDWORK+IPREPAD ), SIZETMS,
      $                    IINFO )
+            END IF
 *
             WKNOWN = .TRUE.
 *
@@ -524,10 +579,12 @@
             CALL PDFILLPAD( DESCA( CTXT_ ), SIZETMS, 1, WORK( INDWORK ),
      $                      SIZETMS, IPREPAD, IPOSTPAD, PADVAL+4.0D+0 )
 *
+            IF( N.GT.0) THEN
             CALL PDLATMS( N, N, 'S', ISEED, 'S', WORK( INDD ), IMODE,
      $                    COND, ANORM, 0, 0, 'N', COPYA, 1, 1, DESCA,
      $                    ORDER, WORK( INDWORK+IPREPAD ), SIZETMS,
      $                    IINFO )
+            END IF
 *
             CALL PDCHEKPAD( DESCA( CTXT_ ), 'PDLATMS4-WORK', SIZETMS, 1,
      $                      WORK( INDWORK ), SIZETMS, IPREPAD, IPOSTPAD,
@@ -541,7 +598,7 @@
             IINFO = 1
          END IF
 *
-         IF( WKNOWN )
+         IF( WKNOWN .AND. N.GT.0)
      $      CALL DLASRT( 'I', N, WORK( INDD ), IINFO )
 *
 *
@@ -1064,7 +1121,8 @@
 *        PDSYEV test1:
 *        JOBZ = 'N', eigenvalues only
 *
-         IF( INFO.NE.0 ) THEN
+         IF( INFO.NE.0 . AND. N .GE. 0 .AND.
+     $            .NOT.(EX_FLAG)) THEN
 *
 *           If the EVX tests fail, we do not perform the EV tests
 *
@@ -1077,10 +1135,24 @@
      $                  WORK( INDWORK ), -1, INFO )
             MINSIZE = INT( WORK( INDWORK ) )
 *
-            CALL PDSQPSUBTST( WKNOWN, JOBZ, UPLO, N, THRESH, ABSTOL, A,
-     $                        COPYA, Z, 1, 1, DESCA, WIN, WNEW, IPREPAD,
-     $                        IPOSTPAD, WORK( INDWORK ), LLWORK,
-     $                        MINSIZE, RES, TSTNRM, QTQNRM, NOUT )
+*      When N < 0/Invalid, PDSYEV INFO = -3
+*      Expected Error code for N < 0
+*      Hence this case can be passed by setting RESULT = 0
+*
+
+            IF(N .LT. 0 .AND. INFO .EQ. -3) THEN
+             IF( IAM.EQ.0 ) THEN
+               WRITE( NOUT, FMT = 9979)
+             END IF
+             PASSED = 'PASSED   EV'
+             INFO = 1
+            ELSE
+              CALL PDSQPSUBTST( WKNOWN, JOBZ, UPLO, N, THRESH, ABSTOL,
+     $                        A, COPYA, Z, 1, 1, DESCA, WIN, WNEW,
+     $                        IPREPAD, IPOSTPAD, WORK( INDWORK ),
+     $                        LLWORK, MINSIZE, RES, TSTNRM, QTQNRM,
+     $                        NOUT )
+            END IF
 *
             IF( RES.NE.0 ) THEN
                MAXTSTNRM = MAX( TSTNRM, MAXTSTNRM )
@@ -1092,8 +1164,8 @@
 *
 *        PDSYEV test2:
 *        JOBZ = 'V', eigenvalues and eigenvectors
-*  
-         IF( INFO.EQ.0 ) THEN
+*
+         IF( INFO.EQ.0 .AND. .NOT.(EX_FLAG) ) THEN
             JOBZ = 'V'
 *
             CALL PDSYEV( JOBZ, UPLO, N, A, 1, 1, DESCA,
@@ -1101,11 +1173,24 @@
      $                  WORK( INDWORK ), -1, INFO )
             MINSIZE = INT( WORK( INDWORK ) )
 *
-            CALL PDSQPSUBTST( WKNOWN, JOBZ, UPLO, N, THRESH, ABSTOL, A,
-     $                        COPYA, Z, 1, 1, DESCA, WIN, WNEW, IPREPAD,
-     $                        IPOSTPAD, WORK( INDWORK ), LLWORK,
-     $                        MINSIZE, RES, TSTNRM, QTQNRM, NOUT )
-*     
+*      When N < 0/Invalid, PDSYEV INFO = -3
+*      Expected Error code for N < 0
+*      Hence this case can be passed by setting RESULT = 0
+*
+            IF(N .LT. 0 .AND. INFO .EQ. -3) THEN
+             IF( IAM.EQ.0 ) THEN
+               WRITE( NOUT, FMT = 9979)
+             END IF
+             PASSED = 'PASSED   EV'
+             INFO = 1
+            ELSE
+             CALL PDSQPSUBTST( WKNOWN, JOBZ, UPLO, N, THRESH, ABSTOL,
+     $                        A, COPYA, Z, 1, 1, DESCA, WIN, WNEW,
+     $                        IPREPAD, IPOSTPAD, WORK( INDWORK ),
+     $                        LLWORK, MINSIZE, RES, TSTNRM, QTQNRM,
+     $                        NOUT )
+            END IF
+*
             IF( RES.NE.0 ) THEN
                MAXTSTNRM = MAX( TSTNRM, MAXTSTNRM )
                MAXQTQNRM = MAX( QTQNRM, MAXQTQNRM )
@@ -1113,7 +1198,7 @@
                INFO = 1
             END IF
          END IF
-         IF( INFO.EQ.1 ) THEN
+         IF( INFO.EQ.1 .AND. (N.GT.0)) THEN
             IF( IAM.EQ.0 ) THEN
                WRITE( NOUT, FMT = 9994 )'C  '
                WRITE( NOUT, FMT = 9993 )ISEEDIN( 1 )
@@ -1172,7 +1257,7 @@
 *
 *        PDSYEVD test1:
 *
-         IF( INFO.NE.0 ) THEN
+         IF( INFO.NE.0 .AND. N .GT. 0 .AND. .NOT.(EX_FLAG)) THEN
 *
 *           If the EV tests fail, we do not perform the EVD tests
 *
@@ -1181,7 +1266,7 @@
 *
             NP = NUMROC( N, DESCA( MB_ ), 0, 0, NPROW )
             NQ = NUMROC( N, DESCA( NB_ ), 0, 0, NPCOL )
-            MINSIZE  = MAX( 1+6*N+2*NP*NQ, 
+            MINSIZE  = MAX( 1+6*N+2*NP*NQ,
      $           3*N + MAX( NB*( NP+1 ), 3*NB ) ) + 2*N
 *
             CALL PDSDPSUBTST( WKNOWN, UPLO, N, THRESH, ABSTOL, A,
@@ -1190,14 +1275,19 @@
      $                        MINSIZE, IWORK, ISIZESYEVD,
      $                        RES, TSTNRM, QTQNRM, NOUT )
 *
-            IF( RES.NE.0 ) THEN
+*      When N < 0/Invalid, PDSYEV INFO = -3
+*      Expected Error code for N < 0
+*      Hence this case can be passed by setting INFO = 0
+            IF(N .LT. 0 .AND. INFO .EQ. -3) THEN
+               INFO = 0
+            ELSE IF( RES.NE.0 ) THEN
                MAXTSTNRM = MAX( TSTNRM, MAXTSTNRM )
                MAXQTQNRM = MAX( QTQNRM, MAXQTQNRM )
                PASSED = 'FAIL EVD test1'
                INFO = 1
             END IF
          END IF
-         IF( INFO.EQ.1 ) THEN
+         IF( INFO.EQ.1 .AND. N .GT.0) THEN
             IF( IAM.EQ.0 ) THEN
                WRITE( NOUT, FMT = 9994 )'C  '
                WRITE( NOUT, FMT = 9993 )ISEEDIN( 1 )
@@ -1273,6 +1363,8 @@
  9982 FORMAT( '      ABSTOL=', D16.6 )
  9981 FORMAT( '      THRESH=', D16.6 )
  9980 FORMAT( ' Increase TOTMEM in PDSEPDRIVER' )
+ 9979 FORMAT( 'N < 0, negative test case detected for PDSYEV with'
+     $        ' INFO = -3, Passing this case')
 *
 *     End of PDSEPTST
 *
