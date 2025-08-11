@@ -1,0 +1,1495 @@
+{
+  "version": "2.1.0",
+  "runs": [
+    {
+      "tool": {
+        "driver": {
+          "name": "Glog.AI",
+          "organization": "Glog.AI",
+          "fullName": "Glog, Making software more secure",
+          "version": "1.0.0",
+          "semanticVersion": "1.0.0",
+          "informationUri": "https://www.glog.ai",
+          "rules": [
+            {
+              "id": "glog-ab017d40-b57a-4461-bad2-95abce99ca74",
+              "help": {
+                "text": "",
+                "markdown": "### Description\n\nThe vulnerability identified with the `memcpy` function in C++ arises from improper handling of buffer sizes, which can lead to buffer overflow. The function call `memcpy(api_name, api, *lenapi)` is potentially unsafe if `*lenapi` exceeds the size of the destination buffer `api_name`. This can result in overwriting adjacent memory, leading to undefined behavior, crashes, or security vulnerabilities such as arbitrary code execution.\n\n### General Mitigation Advice\n\n1. **Validate Input Sizes**: Always ensure that the size of the data being copied does not exceed the size of the destination buffer.\n2. **Use Safer Alternatives**: Consider using safer functions like `memmove` or `strncpy` that provide additional safety checks.\n3. **Implement Bounds Checking**: Explicitly check the length of the data against the buffer size before performing the copy operation.\n4. **Adopt Secure Coding Practices**: Regularly review and test code for vulnerabilities and adhere to secure coding standards.\n\n### Source Code Fix Recommendation\n\nBelow is a fixed version of the code that includes bounds checking to prevent buffer overflow:\n\n```cpp\n#include <cstring> // Required for memcpy\n#include <iostream>\n\n// Example function demonstrating safe use of memcpy\nvoid safeMemcpy(char* api_name, const char* api, size_t lenapi, size_t api_name_size) {\n    if (lenapi <= api_name_size) {\n        memcpy(api_name, api, lenapi);\n    } else {\n        std::cerr << \"Error: Buffer overflow risk detected. Copy operation aborted.\" << std::endl;\n    }\n}\n\nint main() {\n    const size_t bufferSize = 256;\n    char api_name[bufferSize];\n    const char* api = \"Example API data\";\n    size_t lenapi = strlen(api);\n\n    safeMemcpy(api_name, api, lenapi, bufferSize);\n\n    return 0;\n}\n```\n\n### Library Dependencies\n\n- `<cstring>`: Required for the `memcpy` function.\n- `<iostream>`: Required for input/output operations.\n\n### OWASP Resources\n\n- [OWASP Top Ten](https://owasp.org/www-project-top-ten/)\n- [OWASP Secure Coding Practices](https://owasp.org/www-project-secure-coding-practices-quick-reference-guide/)\n\n### Common Weakness Enumeration (CWE)\n\n- [CWE-120: Buffer Copy without Checking Size of Input ('Classic Buffer Overflow')](https://cwe.mitre.org/data/definitions/120.html)"
+              },
+              "properties": {
+                "tags": [
+                  "DS121708"
+                ]
+              }
+            },
+            {
+              "id": "glog-a5de3f87-4bb9-4295-a211-eb95c75b5570",
+              "help": {
+                "text": "",
+                "markdown": "### Description\n\nThe vulnerability identified with the `memcpy` function in C++ arises from improper handling of buffer sizes, which can lead to buffer overflow. The function call `memcpy(api_name, api, *lenapi)` is potentially unsafe if `*lenapi` exceeds the size of the destination buffer `api_name`. This can result in overwriting adjacent memory, leading to undefined behavior, crashes, or security vulnerabilities such as arbitrary code execution.\n\n### General Mitigation Advice\n\n1. **Validate Input Sizes**: Always ensure that the size of the data being copied does not exceed the size of the destination buffer.\n2. **Use Safer Alternatives**: Consider using safer functions like `memmove` or `strncpy` that provide additional safety checks.\n3. **Implement Bounds Checking**: Explicitly check the length of the data against the buffer size before performing the copy operation.\n4. **Adopt Secure Coding Practices**: Regularly review and test code for vulnerabilities and adhere to secure coding standards.\n\n### Source Code Fix Recommendation\n\nBelow is a fixed version of the code that includes bounds checking to prevent buffer overflow:\n\n```cpp\n#include <cstring> // Required for memcpy\n#include <iostream>\n\n// Example function demonstrating safe use of memcpy\nvoid safeMemcpy(char* api_name, const char* api, size_t lenapi, size_t api_name_size) {\n    if (lenapi <= api_name_size) {\n        memcpy(api_name, api, lenapi);\n    } else {\n        std::cerr << \"Error: Buffer overflow risk detected. Copy operation aborted.\" << std::endl;\n    }\n}\n\nint main() {\n    const size_t bufferSize = 256;\n    char api_name[bufferSize];\n    const char* api = \"Example API data\";\n    size_t lenapi = strlen(api);\n\n    safeMemcpy(api_name, api, lenapi, bufferSize);\n\n    return 0;\n}\n```\n\n### Library Dependencies\n\n- `<cstring>`: Required for the `memcpy` function.\n- `<iostream>`: Required for input/output operations.\n\n### OWASP Resources\n\n- [OWASP Top Ten](https://owasp.org/www-project-top-ten/)\n- [OWASP Secure Coding Practices](https://owasp.org/www-project-secure-coding-practices-quick-reference-guide/)\n\n### Common Weakness Enumeration (CWE)\n\n- [CWE-120: Buffer Copy without Checking Size of Input ('Classic Buffer Overflow')](https://cwe.mitre.org/data/definitions/120.html)"
+              },
+              "properties": {
+                "tags": [
+                  "DS121708"
+                ]
+              }
+            },
+            {
+              "id": "glog-a9ca83c1-9639-4313-968c-7a87c738598e",
+              "help": {
+                "text": "",
+                "markdown": "### Description\n\nThe \"Detected Issue with C Function (malloc)\" vulnerability in C++ typically arises from improper use of the `malloc` function, which is used to allocate memory dynamically. In the provided code snippet, `malloc(nvecs * sizeof(MPI_Datatype))`, the vulnerability may occur if `nvecs` is not properly validated. This can lead to several issues, such as integer overflow, buffer overflow, or memory allocation failures, which can be exploited to cause a denial of service or execute arbitrary code.\n\n### General Mitigation Advice\n\n1. **Input Validation**: Ensure that `nvecs` is validated to be a positive integer and within a reasonable range to prevent integer overflow.\n2. **Check for NULL**: Always check the return value of `malloc` to ensure that memory allocation was successful.\n3. **Use Safer Alternatives**: Consider using `calloc` instead of `malloc` as it initializes the allocated memory to zero, reducing the risk of using uninitialized memory.\n4. **Free Allocated Memory**: Ensure that all dynamically allocated memory is properly freed to prevent memory leaks.\n\n### Source Code Fix Recommendation\n\n```cpp\n#include <iostream>\n#include <cstdlib>\n#include <mpi.h> // MPI library\n\nint main() {\n    int nvecs = 10; // Example value, should be validated\n    if (nvecs <= 0 || nvecs > MAX_ALLOWED) { // Define MAX_ALLOWED as a safe upper limit\n        std::cerr << \"Invalid number of vectors.\" << std::endl;\n        return EXIT_FAILURE;\n    }\n\n    MPI_Datatype* dataTypes = static_cast<MPI_Datatype*>(malloc(nvecs * sizeof(MPI_Datatype)));\n    if (dataTypes == nullptr) {\n        std::cerr << \"Memory allocation failed.\" << std::endl;\n        return EXIT_FAILURE;\n    }\n\n    // Use the allocated memory...\n\n    free(dataTypes); // Free the allocated memory\n    return EXIT_SUCCESS;\n}\n```\n\n### Library Dependencies\n\n- `mpi.h`: This is required for MPI-related functions and types.\n- `cstdlib`: Required for `malloc`, `free`, and `EXIT_FAILURE`/`EXIT_SUCCESS`.\n- `iostream`: Required for input/output operations.\n\n### Relevant Links\n\n- [OWASP Top Ten](https://owasp.org/www-project-top-ten/)\n- [CWE-190: Integer Overflow or Wraparound](https://cwe.mitre.org/data/definitions/190.html)\n- [CWE-401: Missing Release of Memory after Effective Lifetime](https://cwe.mitre.org/data/definitions/401.html)\n\nThese links are verified to be active and accessible for anonymous users."
+              },
+              "properties": {
+                "tags": [
+                  "DS161085"
+                ]
+              }
+            },
+            {
+              "id": "glog-da5d4527-e085-4b21-8455-d2ab7713442b",
+              "help": {
+                "text": "",
+                "markdown": "### Description\n\nThe \"Detected Issue with C Function (malloc)\" vulnerability in C++ arises when the `malloc` function is used improperly, potentially leading to memory allocation issues such as buffer overflows, memory leaks, or undefined behavior. In the provided code snippet, `malloc(nvecs * sizeof(int))`, the vulnerability may occur if `nvecs` is not properly validated, leading to an incorrect or excessive amount of memory being allocated. This can result in security vulnerabilities, including the possibility of an attacker exploiting the program to execute arbitrary code or cause a denial of service.\n\n### General Mitigation Advice\n\n1. **Input Validation**: Ensure that all inputs used in memory allocation calculations are validated to prevent excessive or negative values.\n2. **Error Checking**: Always check the return value of `malloc` to ensure that memory allocation was successful.\n3. **Use Safer Alternatives**: Consider using safer memory allocation functions like `calloc`, which initializes the allocated memory to zero, or C++ alternatives like `new` that throw exceptions on failure.\n4. **Limit Memory Usage**: Implement limits on the amount of memory that can be allocated to prevent resource exhaustion.\n5. **Free Allocated Memory**: Ensure that all allocated memory is properly freed to prevent memory leaks.\n\n### Source Code Fix Recommendation\n\n```cpp\n#include <iostream>\n#include <cstdlib> // Required for malloc and free\n\nint main() {\n    size_t nvecs = 10; // Example value, should be validated\n    if (nvecs > SIZE_MAX / sizeof(int)) {\n        std::cerr << \"Requested memory size is too large.\" << std::endl;\n        return EXIT_FAILURE;\n    }\n\n    int* vecs = static_cast<int*>(malloc(nvecs * sizeof(int)));\n    if (vecs == nullptr) {\n        std::cerr << \"Memory allocation failed.\" << std::endl;\n        return EXIT_FAILURE;\n    }\n\n    // Use the allocated memory\n\n    free(vecs); // Free the allocated memory\n    return EXIT_SUCCESS;\n}\n```\n\n### Library Dependencies\n\n- `<iostream>`: For input and output operations.\n- `<cstdlib>`: For `malloc`, `free`, and `EXIT_FAILURE`/`EXIT_SUCCESS`.\n\n### OWASP Resources\n\n- [OWASP Top Ten](https://owasp.org/www-project-top-ten/)\n- [OWASP Secure Coding Practices](https://owasp.org/www-project-secure-coding-practices-quick-reference-guide/)\n\n### Common Weakness Enumeration (CWE)\n\n- [CWE-789: Uncontrolled Memory Allocation](https://cwe.mitre.org/data/definitions/789.html)\n- [CWE-401: Missing Release of Memory after Effective Lifetime](https://cwe.mitre.org/data/definitions/401.html)"
+              },
+              "properties": {
+                "tags": [
+                  "DS161085"
+                ]
+              }
+            },
+            {
+              "id": "glog-f1172da6-2cf3-4474-858b-4eda227467bb",
+              "help": {
+                "text": "",
+                "markdown": "### Description\n\nThe vulnerability identified with the `memcpy` function in C++ arises from improper handling of buffer sizes, which can lead to buffer overflow. The function call `memcpy(api_name, api, *lenapi)` is potentially unsafe if `*lenapi` exceeds the size of the destination buffer `api_name`. This can result in overwriting adjacent memory, leading to undefined behavior, crashes, or security vulnerabilities such as arbitrary code execution.\n\n### General Mitigation Advice\n\n1. **Validate Input Sizes**: Always ensure that the size of the data being copied does not exceed the size of the destination buffer.\n2. **Use Safer Alternatives**: Consider using safer functions like `memmove` or `strncpy` that provide additional safety checks.\n3. **Implement Bounds Checking**: Explicitly check the length of the data against the buffer size before performing the copy operation.\n4. **Adopt Secure Coding Practices**: Regularly review and test code for vulnerabilities and adhere to secure coding standards.\n\n### Source Code Fix Recommendation\n\nBelow is a fixed version of the code that includes bounds checking to prevent buffer overflow:\n\n```cpp\n#include <cstring> // Required for memcpy\n#include <iostream>\n\n// Example function demonstrating safe use of memcpy\nvoid safeMemcpy(char* api_name, const char* api, size_t lenapi, size_t api_name_size) {\n    if (lenapi <= api_name_size) {\n        memcpy(api_name, api, lenapi);\n    } else {\n        std::cerr << \"Error: Buffer overflow risk detected. Copy operation aborted.\" << std::endl;\n    }\n}\n\nint main() {\n    const size_t bufferSize = 256;\n    char api_name[bufferSize];\n    const char* api = \"Example API data\";\n    size_t lenapi = strlen(api);\n\n    safeMemcpy(api_name, api, lenapi, bufferSize);\n\n    return 0;\n}\n```\n\n### Library Dependencies\n\n- `<cstring>`: Required for the `memcpy` function.\n- `<iostream>`: Required for input/output operations.\n\n### OWASP Resources\n\n- [OWASP Top Ten](https://owasp.org/www-project-top-ten/)\n- [OWASP Secure Coding Practices](https://owasp.org/www-project-secure-coding-practices-quick-reference-guide/)\n\n### Common Weakness Enumeration (CWE)\n\n- [CWE-120: Buffer Copy without Checking Size of Input ('Classic Buffer Overflow')](https://cwe.mitre.org/data/definitions/120.html)"
+              },
+              "properties": {
+                "tags": [
+                  "DS121708"
+                ]
+              }
+            },
+            {
+              "id": "glog-5b9bf29d-9de7-4284-8542-8654d54819f5",
+              "help": {
+                "text": "",
+                "markdown": "### Description\n\nThe vulnerability identified with the `memcpy` function in C++ arises from improper handling of buffer sizes, which can lead to buffer overflow. The function call `memcpy(api_name, api, *lenapi)` is potentially unsafe if `*lenapi` exceeds the size of the destination buffer `api_name`. This can result in overwriting adjacent memory, leading to undefined behavior, crashes, or security vulnerabilities such as arbitrary code execution.\n\n### General Mitigation Advice\n\n1. **Validate Input Sizes**: Always ensure that the size of the data being copied does not exceed the size of the destination buffer.\n2. **Use Safer Alternatives**: Consider using safer functions like `memmove` or `strncpy` that provide additional safety checks.\n3. **Implement Bounds Checking**: Explicitly check the length of the data against the buffer size before performing the copy operation.\n4. **Adopt Secure Coding Practices**: Regularly review and test code for vulnerabilities and adhere to secure coding standards.\n\n### Source Code Fix Recommendation\n\nBelow is a fixed version of the code that includes bounds checking to prevent buffer overflow:\n\n```cpp\n#include <cstring> // Required for memcpy\n#include <iostream>\n\n// Example function demonstrating safe use of memcpy\nvoid safeMemcpy(char* api_name, const char* api, size_t lenapi, size_t api_name_size) {\n    if (lenapi <= api_name_size) {\n        memcpy(api_name, api, lenapi);\n    } else {\n        std::cerr << \"Error: Buffer overflow risk detected. Copy operation aborted.\" << std::endl;\n    }\n}\n\nint main() {\n    const size_t bufferSize = 256;\n    char api_name[bufferSize];\n    const char* api = \"Example API data\";\n    size_t lenapi = strlen(api);\n\n    safeMemcpy(api_name, api, lenapi, bufferSize);\n\n    return 0;\n}\n```\n\n### Library Dependencies\n\n- `<cstring>`: Required for the `memcpy` function.\n- `<iostream>`: Required for input/output operations.\n\n### OWASP Resources\n\n- [OWASP Top Ten](https://owasp.org/www-project-top-ten/)\n- [OWASP Secure Coding Practices](https://owasp.org/www-project-secure-coding-practices-quick-reference-guide/)\n\n### Common Weakness Enumeration (CWE)\n\n- [CWE-120: Buffer Copy without Checking Size of Input ('Classic Buffer Overflow')](https://cwe.mitre.org/data/definitions/120.html)"
+              },
+              "properties": {
+                "tags": [
+                  "DS121708"
+                ]
+              }
+            },
+            {
+              "id": "glog-86602eb8-3685-4955-a757-1f49cb0e98b6",
+              "help": {
+                "text": "",
+                "markdown": "### Description\n\nThe \"Identified Issue with C Function (malloc)\" vulnerability in C++ typically arises from improper use of the `malloc` function, which can lead to memory allocation errors, buffer overflows, or memory leaks. In the provided code snippet, `malloc(nvecs * sizeof(void *)` is used to allocate memory. If `nvecs` is not properly validated, it can lead to an integer overflow or underflow, resulting in insufficient memory allocation or excessive memory allocation, which can be exploited by attackers.\n\n### General Mitigation Advice\n\n1. **Input Validation**: Always validate input values before using them in memory allocation functions. Ensure that `nvecs` is a positive integer and within a reasonable range.\n2. **Check for Overflow**: Before performing the multiplication, check if the multiplication of `nvecs` and `sizeof(void *)` would result in an overflow.\n3. **Check Return Value**: Always check the return value of `malloc` to ensure that memory allocation was successful.\n4. **Use Safer Alternatives**: Consider using safer alternatives like `calloc`, which initializes the allocated memory to zero, or C++ constructs like `std::vector` that handle memory management automatically.\n\n### Source Code Fix Recommendation\n\n```cpp\n#include <iostream>\n#include <limits>\n#include <cstdlib>\n\nvoid* safe_malloc(size_t nvecs) {\n    // Validate nvecs to prevent overflow\n    if (nvecs == 0 || nvecs > std::numeric_limits<size_t>::max() / sizeof(void *)) {\n        std::cerr << \"Invalid number of vectors for allocation.\" << std::endl;\n        return nullptr;\n    }\n\n    // Allocate memory and check for successful allocation\n    void* ptr = malloc(nvecs * sizeof(void *));\n    if (!ptr) {\n        std::cerr << \"Memory allocation failed.\" << std::endl;\n    }\n    return ptr;\n}\n\nint main() {\n    size_t nvecs = 10; // Example value, should be validated\n    void* memory = safe_malloc(nvecs);\n    if (memory) {\n        // Use the allocated memory\n        // ...\n\n        // Free the allocated memory\n        free(memory);\n    }\n    return 0;\n}\n```\n\n### Library Dependencies\n\n- `<iostream>`: For input and output operations.\n- `<limits>`: To use `std::numeric_limits` for checking size limits.\n- `<cstdlib>`: For `malloc` and `free` functions.\n\n### OWASP Resources\n\n- [OWASP Top Ten](https://owasp.org/www-project-top-ten/)\n- [OWASP Secure Coding Practices](https://owasp.org/www-project-secure-coding-practices-quick-reference-guide/)\n\n### Common Weakness Enumeration (CWE)\n\n- [CWE-190: Integer Overflow or Wraparound](https://cwe.mitre.org/data/definitions/190.html)\n- [CWE-401: Missing Release of Memory after Effective Lifetime](https://cwe.mitre.org/data/definitions/401.html)"
+              },
+              "properties": {
+                "tags": [
+                  "DS161085"
+                ]
+              }
+            },
+            {
+              "id": "glog-63fb832e-a018-4981-88cb-1120a43b8640",
+              "help": {
+                "text": "",
+                "markdown": "### Description\n\nThe vulnerability identified with the `memcpy` function in C++ arises from improper handling of buffer sizes, which can lead to buffer overflow. The function call `memcpy(api_name, api, *lenapi)` is potentially unsafe if `*lenapi` exceeds the size of the destination buffer `api_name`. This can result in overwriting adjacent memory, leading to undefined behavior, crashes, or security vulnerabilities such as arbitrary code execution.\n\n### General Mitigation Advice\n\n1. **Validate Input Sizes**: Always ensure that the size of the data being copied does not exceed the size of the destination buffer.\n2. **Use Safer Alternatives**: Consider using safer functions like `memmove` or `strncpy` that provide additional safety checks.\n3. **Implement Bounds Checking**: Explicitly check the length of the data against the buffer size before performing the copy operation.\n4. **Adopt Secure Coding Practices**: Regularly review and test code for vulnerabilities and adhere to secure coding standards.\n\n### Source Code Fix Recommendation\n\nBelow is a fixed version of the code that includes bounds checking to prevent buffer overflow:\n\n```cpp\n#include <cstring> // Required for memcpy\n#include <iostream>\n\n// Example function demonstrating safe use of memcpy\nvoid safeMemcpy(char* api_name, const char* api, size_t lenapi, size_t api_name_size) {\n    if (lenapi <= api_name_size) {\n        memcpy(api_name, api, lenapi);\n    } else {\n        std::cerr << \"Error: Buffer overflow risk detected. Copy operation aborted.\" << std::endl;\n    }\n}\n\nint main() {\n    const size_t bufferSize = 256;\n    char api_name[bufferSize];\n    const char* api = \"Example API data\";\n    size_t lenapi = strlen(api);\n\n    safeMemcpy(api_name, api, lenapi, bufferSize);\n\n    return 0;\n}\n```\n\n### Library Dependencies\n\n- `<cstring>`: Required for the `memcpy` function.\n- `<iostream>`: Required for input/output operations.\n\n### OWASP Resources\n\n- [OWASP Top Ten](https://owasp.org/www-project-top-ten/)\n- [OWASP Secure Coding Practices](https://owasp.org/www-project-secure-coding-practices-quick-reference-guide/)\n\n### Common Weakness Enumeration (CWE)\n\n- [CWE-120: Buffer Copy without Checking Size of Input ('Classic Buffer Overflow')](https://cwe.mitre.org/data/definitions/120.html)"
+              },
+              "properties": {
+                "tags": [
+                  "DS121708"
+                ]
+              }
+            },
+            {
+              "id": "glog-ded8e439-ccc4-4a40-8973-dc4018e20b4f",
+              "help": {
+                "text": "",
+                "markdown": "### Description\n\nThe vulnerability identified with the `memcpy` function in C++ arises from improper handling of buffer sizes, which can lead to buffer overflow. The function call `memcpy(api_name, api, *lenapi)` is potentially unsafe if `*lenapi` exceeds the size of the destination buffer `api_name`. This can result in overwriting adjacent memory, leading to undefined behavior, crashes, or security vulnerabilities such as arbitrary code execution.\n\n### General Mitigation Advice\n\n1. **Validate Input Sizes**: Always ensure that the size of the data being copied does not exceed the size of the destination buffer.\n2. **Use Safer Alternatives**: Consider using safer functions like `memmove` or `strncpy` that provide additional safety checks.\n3. **Implement Bounds Checking**: Explicitly check the length of the data against the buffer size before performing the copy operation.\n4. **Adopt Secure Coding Practices**: Regularly review and test code for vulnerabilities and adhere to secure coding standards.\n\n### Source Code Fix Recommendation\n\nBelow is a fixed version of the code that includes bounds checking to prevent buffer overflow:\n\n```cpp\n#include <cstring> // Required for memcpy\n#include <iostream>\n\n// Example function demonstrating safe use of memcpy\nvoid safeMemcpy(char* api_name, const char* api, size_t lenapi, size_t api_name_size) {\n    if (lenapi <= api_name_size) {\n        memcpy(api_name, api, lenapi);\n    } else {\n        std::cerr << \"Error: Buffer overflow risk detected. Copy operation aborted.\" << std::endl;\n    }\n}\n\nint main() {\n    const size_t bufferSize = 256;\n    char api_name[bufferSize];\n    const char* api = \"Example API data\";\n    size_t lenapi = strlen(api);\n\n    safeMemcpy(api_name, api, lenapi, bufferSize);\n\n    return 0;\n}\n```\n\n### Library Dependencies\n\n- `<cstring>`: Required for the `memcpy` function.\n- `<iostream>`: Required for input/output operations.\n\n### OWASP Resources\n\n- [OWASP Top Ten](https://owasp.org/www-project-top-ten/)\n- [OWASP Secure Coding Practices](https://owasp.org/www-project-secure-coding-practices-quick-reference-guide/)\n\n### Common Weakness Enumeration (CWE)\n\n- [CWE-120: Buffer Copy without Checking Size of Input ('Classic Buffer Overflow')](https://cwe.mitre.org/data/definitions/120.html)"
+              },
+              "properties": {
+                "tags": [
+                  "DS121708"
+                ]
+              }
+            },
+            {
+              "id": "glog-ea9dc2ed-c900-4364-a95d-4bc93afcd4ed",
+              "help": {
+                "text": "",
+                "markdown": "### Description\n\nThe \"Detected Issue with C Function (malloc)\" vulnerability in C++ typically arises from improper use of the `malloc` function, which is used to allocate memory dynamically. In the provided code snippet, `malloc(nvecs * sizeof(MPI_Aint))`, the vulnerability may occur if `nvecs` is not properly validated. This can lead to several issues, such as integer overflow, buffer overflow, or memory allocation failures, which can be exploited to cause a denial of service or execute arbitrary code.\n\n### General Mitigation Advice\n\n1. **Input Validation**: Ensure that `nvecs` is validated to be a positive integer and within a reasonable range to prevent integer overflow.\n2. **Check for NULL**: Always check the return value of `malloc` to ensure that memory allocation was successful.\n3. **Use Safer Alternatives**: Consider using `calloc` which initializes the allocated memory to zero, reducing the risk of using uninitialized memory.\n4. **Free Allocated Memory**: Ensure that all dynamically allocated memory is properly freed to prevent memory leaks.\n\n### Source Code Fix Recommendation\n\n```cpp\n#include <mpi.h>\n#include <cstdlib>\n#include <iostream>\n\nint main() {\n    size_t nvecs = /* some value */;\n    \n    // Validate nvecs\n    if (nvecs == 0 || nvecs > SIZE_MAX / sizeof(MPI_Aint)) {\n        std::cerr << \"Invalid number of vectors\" << std::endl;\n        return EXIT_FAILURE;\n    }\n\n    MPI_Aint* array = (MPI_Aint*)malloc(nvecs * sizeof(MPI_Aint));\n    \n    // Check for successful allocation\n    if (array == NULL) {\n        std::cerr << \"Memory allocation failed\" << std::endl;\n        return EXIT_FAILURE;\n    }\n\n    // Use the allocated memory\n\n    // Free the allocated memory\n    free(array);\n\n    return EXIT_SUCCESS;\n}\n```\n\n### Library Dependencies\n\nTo execute the code example properly, the following library dependencies are required:\n\n- MPI (Message Passing Interface) library, such as OpenMPI or MPICH.\n- Standard C++ libraries (`cstdlib`, `iostream`).\n\n### Relevant Resources\n\n- [OWASP Top Ten](https://owasp.org/www-project-top-ten/)\n- [OWASP Secure Coding Practices](https://owasp.org/www-project-secure-coding-practices-quick-reference-guide/)\n\n### Common Weakness Enumeration\n\n- [CWE-190: Integer Overflow or Wraparound](https://cwe.mitre.org/data/definitions/190.html)\n- [CWE-401: Missing Release of Memory after Effective Lifetime](https://cwe.mitre.org/data/definitions/401.html)"
+              },
+              "properties": {
+                "tags": [
+                  "DS161085"
+                ]
+              }
+            },
+            {
+              "id": "glog-d8c22481-6d3a-4d3b-b5b8-95d307ef3aca",
+              "help": {
+                "text": "",
+                "markdown": "### Description\n\nThe vulnerability identified with the `memcpy` function in C++ arises from improper handling of buffer sizes, which can lead to buffer overflow. The function call `memcpy(api_name, api, *lenapi)` is potentially unsafe if `*lenapi` exceeds the size of the destination buffer `api_name`. This can result in overwriting adjacent memory, leading to undefined behavior, crashes, or security vulnerabilities such as arbitrary code execution.\n\n### General Mitigation Advice\n\n1. **Validate Input Sizes**: Always ensure that the size of the data being copied does not exceed the size of the destination buffer.\n2. **Use Safer Alternatives**: Consider using safer functions like `memmove` or `strncpy` that provide additional safety checks.\n3. **Implement Bounds Checking**: Explicitly check the length of the data against the buffer size before performing the copy operation.\n4. **Adopt Secure Coding Practices**: Regularly review and test code for vulnerabilities and adhere to secure coding standards.\n\n### Source Code Fix Recommendation\n\nBelow is a fixed version of the code that includes bounds checking to prevent buffer overflow:\n\n```cpp\n#include <cstring> // Required for memcpy\n#include <iostream>\n\n// Example function demonstrating safe use of memcpy\nvoid safeMemcpy(char* api_name, const char* api, size_t lenapi, size_t api_name_size) {\n    if (lenapi <= api_name_size) {\n        memcpy(api_name, api, lenapi);\n    } else {\n        std::cerr << \"Error: Buffer overflow risk detected. Copy operation aborted.\" << std::endl;\n    }\n}\n\nint main() {\n    const size_t bufferSize = 256;\n    char api_name[bufferSize];\n    const char* api = \"Example API data\";\n    size_t lenapi = strlen(api);\n\n    safeMemcpy(api_name, api, lenapi, bufferSize);\n\n    return 0;\n}\n```\n\n### Library Dependencies\n\n- `<cstring>`: Required for the `memcpy` function.\n- `<iostream>`: Required for input/output operations.\n\n### OWASP Resources\n\n- [OWASP Top Ten](https://owasp.org/www-project-top-ten/)\n- [OWASP Secure Coding Practices](https://owasp.org/www-project-secure-coding-practices-quick-reference-guide/)\n\n### Common Weakness Enumeration (CWE)\n\n- [CWE-120: Buffer Copy without Checking Size of Input ('Classic Buffer Overflow')](https://cwe.mitre.org/data/definitions/120.html)"
+              },
+              "properties": {
+                "tags": [
+                  "DS121708"
+                ]
+              }
+            },
+            {
+              "id": "glog-62ae56f3-1c09-44fd-b120-8afda29c4a99",
+              "help": {
+                "text": "",
+                "markdown": "### Description\n\nThe vulnerability identified with the `memcpy` function in C++ arises from improper handling of buffer sizes, which can lead to buffer overflow. The function call `memcpy(api_name, api, *lenapi)` is potentially unsafe if `*lenapi` exceeds the size of the destination buffer `api_name`. This can result in overwriting adjacent memory, leading to undefined behavior, crashes, or security vulnerabilities such as arbitrary code execution.\n\n### General Mitigation Advice\n\n1. **Validate Input Sizes**: Always ensure that the size of the data being copied does not exceed the size of the destination buffer.\n2. **Use Safer Alternatives**: Consider using safer functions like `memmove` or `strncpy` that provide additional safety checks.\n3. **Implement Bounds Checking**: Explicitly check the length of the data against the buffer size before performing the copy operation.\n4. **Adopt Secure Coding Practices**: Regularly review and test code for vulnerabilities and adhere to secure coding standards.\n\n### Source Code Fix Recommendation\n\nBelow is a fixed version of the code that includes bounds checking to prevent buffer overflow:\n\n```cpp\n#include <cstring> // Required for memcpy\n#include <iostream>\n\n// Example function demonstrating safe use of memcpy\nvoid safeMemcpy(char* api_name, const char* api, size_t lenapi, size_t api_name_size) {\n    if (lenapi <= api_name_size) {\n        memcpy(api_name, api, lenapi);\n    } else {\n        std::cerr << \"Error: Buffer overflow risk detected. Copy operation aborted.\" << std::endl;\n    }\n}\n\nint main() {\n    const size_t bufferSize = 256;\n    char api_name[bufferSize];\n    const char* api = \"Example API data\";\n    size_t lenapi = strlen(api);\n\n    safeMemcpy(api_name, api, lenapi, bufferSize);\n\n    return 0;\n}\n```\n\n### Library Dependencies\n\n- `<cstring>`: Required for the `memcpy` function.\n- `<iostream>`: Required for input/output operations.\n\n### OWASP Resources\n\n- [OWASP Top Ten](https://owasp.org/www-project-top-ten/)\n- [OWASP Secure Coding Practices](https://owasp.org/www-project-secure-coding-practices-quick-reference-guide/)\n\n### Common Weakness Enumeration (CWE)\n\n- [CWE-120: Buffer Copy without Checking Size of Input ('Classic Buffer Overflow')](https://cwe.mitre.org/data/definitions/120.html)"
+              },
+              "properties": {
+                "tags": [
+                  "DS121708"
+                ]
+              }
+            },
+            {
+              "id": "glog-c6655d00-bd06-4ad0-b009-158d62144c22",
+              "help": {
+                "text": "",
+                "markdown": "### Description\n\nThe vulnerability identified with the `memcpy` function in C++ arises from improper handling of buffer sizes, which can lead to buffer overflow. The function call `memcpy(api_name, api, *lenapi)` is potentially unsafe if `*lenapi` exceeds the size of the destination buffer `api_name`. This can result in overwriting adjacent memory, leading to undefined behavior, crashes, or security vulnerabilities such as arbitrary code execution.\n\n### General Mitigation Advice\n\n1. **Validate Input Sizes**: Always ensure that the size of the data being copied does not exceed the size of the destination buffer.\n2. **Use Safer Alternatives**: Consider using safer functions like `memmove` or `strncpy` that provide additional safety checks.\n3. **Implement Bounds Checking**: Explicitly check the length of the data against the buffer size before performing the copy operation.\n4. **Adopt Secure Coding Practices**: Regularly review and test code for vulnerabilities and adhere to secure coding standards.\n\n### Source Code Fix Recommendation\n\nBelow is a fixed version of the code that includes bounds checking to prevent buffer overflow:\n\n```cpp\n#include <cstring> // Required for memcpy\n#include <iostream>\n\n// Example function demonstrating safe use of memcpy\nvoid safeMemcpy(char* api_name, const char* api, size_t lenapi, size_t api_name_size) {\n    if (lenapi <= api_name_size) {\n        memcpy(api_name, api, lenapi);\n    } else {\n        std::cerr << \"Error: Buffer overflow risk detected. Copy operation aborted.\" << std::endl;\n    }\n}\n\nint main() {\n    const size_t bufferSize = 256;\n    char api_name[bufferSize];\n    const char* api = \"Example API data\";\n    size_t lenapi = strlen(api);\n\n    safeMemcpy(api_name, api, lenapi, bufferSize);\n\n    return 0;\n}\n```\n\n### Library Dependencies\n\n- `<cstring>`: Required for the `memcpy` function.\n- `<iostream>`: Required for input/output operations.\n\n### OWASP Resources\n\n- [OWASP Top Ten](https://owasp.org/www-project-top-ten/)\n- [OWASP Secure Coding Practices](https://owasp.org/www-project-secure-coding-practices-quick-reference-guide/)\n\n### Common Weakness Enumeration (CWE)\n\n- [CWE-120: Buffer Copy without Checking Size of Input ('Classic Buffer Overflow')](https://cwe.mitre.org/data/definitions/120.html)"
+              },
+              "properties": {
+                "tags": [
+                  "DS121708"
+                ]
+              }
+            },
+            {
+              "id": "glog-ca35f48e-6caa-42c5-a87c-db1f1b81045e",
+              "help": {
+                "text": "",
+                "markdown": "### Description\n\nThe vulnerability identified with the `memcpy` function in C++ arises from improper handling of buffer sizes, which can lead to buffer overflow. The function call `memcpy(api_name, api, *lenapi)` is potentially unsafe if `*lenapi` exceeds the size of the destination buffer `api_name`. This can result in overwriting adjacent memory, leading to undefined behavior, crashes, or security vulnerabilities such as arbitrary code execution.\n\n### General Mitigation Advice\n\n1. **Validate Input Sizes**: Always ensure that the size of the data being copied does not exceed the size of the destination buffer.\n2. **Use Safer Alternatives**: Consider using safer functions like `memmove` or `strncpy` that provide additional safety checks.\n3. **Implement Bounds Checking**: Explicitly check the length of the data against the buffer size before performing the copy operation.\n4. **Adopt Secure Coding Practices**: Regularly review and test code for vulnerabilities and adhere to secure coding standards.\n\n### Source Code Fix Recommendation\n\nBelow is a fixed version of the code that includes bounds checking to prevent buffer overflow:\n\n```cpp\n#include <cstring> // Required for memcpy\n#include <iostream>\n\n// Example function demonstrating safe use of memcpy\nvoid safeMemcpy(char* api_name, const char* api, size_t lenapi, size_t api_name_size) {\n    if (lenapi <= api_name_size) {\n        memcpy(api_name, api, lenapi);\n    } else {\n        std::cerr << \"Error: Buffer overflow risk detected. Copy operation aborted.\" << std::endl;\n    }\n}\n\nint main() {\n    const size_t bufferSize = 256;\n    char api_name[bufferSize];\n    const char* api = \"Example API data\";\n    size_t lenapi = strlen(api);\n\n    safeMemcpy(api_name, api, lenapi, bufferSize);\n\n    return 0;\n}\n```\n\n### Library Dependencies\n\n- `<cstring>`: Required for the `memcpy` function.\n- `<iostream>`: Required for input/output operations.\n\n### OWASP Resources\n\n- [OWASP Top Ten](https://owasp.org/www-project-top-ten/)\n- [OWASP Secure Coding Practices](https://owasp.org/www-project-secure-coding-practices-quick-reference-guide/)\n\n### Common Weakness Enumeration (CWE)\n\n- [CWE-120: Buffer Copy without Checking Size of Input ('Classic Buffer Overflow')](https://cwe.mitre.org/data/definitions/120.html)"
+              },
+              "properties": {
+                "tags": [
+                  "DS121708"
+                ]
+              }
+            },
+            {
+              "id": "glog-ee407324-5fcb-43c7-ac9f-e17de0d153a1",
+              "help": {
+                "text": "",
+                "markdown": "### Description\n\nThe vulnerability identified with the `memcpy` function in C++ arises from improper handling of buffer sizes, which can lead to buffer overflow. The function call `memcpy(api_name, api, *lenapi)` is potentially unsafe if `*lenapi` exceeds the size of the destination buffer `api_name`. This can result in overwriting adjacent memory, leading to undefined behavior, crashes, or security vulnerabilities such as arbitrary code execution.\n\n### General Mitigation Advice\n\n1. **Validate Input Sizes**: Always ensure that the size of the data being copied does not exceed the size of the destination buffer.\n2. **Use Safer Alternatives**: Consider using safer functions like `memmove` or `strncpy` that provide additional safety checks.\n3. **Implement Bounds Checking**: Explicitly check the length of the data against the buffer size before performing the copy operation.\n4. **Adopt Secure Coding Practices**: Regularly review and test code for vulnerabilities and adhere to secure coding standards.\n\n### Source Code Fix Recommendation\n\nBelow is a fixed version of the code that includes bounds checking to prevent buffer overflow:\n\n```cpp\n#include <cstring> // Required for memcpy\n#include <iostream>\n\n// Example function demonstrating safe use of memcpy\nvoid safeMemcpy(char* api_name, const char* api, size_t lenapi, size_t api_name_size) {\n    if (lenapi <= api_name_size) {\n        memcpy(api_name, api, lenapi);\n    } else {\n        std::cerr << \"Error: Buffer overflow risk detected. Copy operation aborted.\" << std::endl;\n    }\n}\n\nint main() {\n    const size_t bufferSize = 256;\n    char api_name[bufferSize];\n    const char* api = \"Example API data\";\n    size_t lenapi = strlen(api);\n\n    safeMemcpy(api_name, api, lenapi, bufferSize);\n\n    return 0;\n}\n```\n\n### Library Dependencies\n\n- `<cstring>`: Required for the `memcpy` function.\n- `<iostream>`: Required for input/output operations.\n\n### OWASP Resources\n\n- [OWASP Top Ten](https://owasp.org/www-project-top-ten/)\n- [OWASP Secure Coding Practices](https://owasp.org/www-project-secure-coding-practices-quick-reference-guide/)\n\n### Common Weakness Enumeration (CWE)\n\n- [CWE-120: Buffer Copy without Checking Size of Input ('Classic Buffer Overflow')](https://cwe.mitre.org/data/definitions/120.html)"
+              },
+              "properties": {
+                "tags": [
+                  "DS121708"
+                ]
+              }
+            },
+            {
+              "id": "glog-6782e56d-266f-400f-9366-40ab839d915c",
+              "help": {
+                "text": "",
+                "markdown": "### Description\n\nThe \"Detected Issue with C Function (malloc)\" vulnerability in C++ typically arises from improper use of the `malloc` function, which is used to allocate memory dynamically. In the provided code snippet, `malloc(j * sizeof(MPI_Comm))`, the vulnerability may occur if the value of `j` is not properly validated. If `j` is too large, it can lead to an integer overflow, resulting in insufficient memory allocation and potential buffer overflow. This can cause undefined behavior, crashes, or security vulnerabilities such as arbitrary code execution.\n\n### General Mitigation Advice\n\n1. **Input Validation**: Always validate input values to ensure they are within expected ranges before using them in memory allocation functions.\n2. **Integer Overflow Checks**: Implement checks to prevent integer overflow when calculating the size of memory to allocate.\n3. **Error Handling**: Check the return value of `malloc` to ensure that memory allocation was successful before using the allocated memory.\n4. **Use Safer Alternatives**: Consider using safer memory allocation functions that automatically handle size calculations and overflow checks, such as `calloc`.\n\n### Source Code Fix Recommendation\n\n```cpp\n#include <iostream>\n#include <cstdlib>\n#include <mpi.h> // Required for MPI_Comm\n\nint main() {\n    size_t j = 10; // Example value, should be validated\n    if (j > SIZE_MAX / sizeof(MPI_Comm)) {\n        std::cerr << \"Error: Integer overflow detected during memory allocation.\" << std::endl;\n        return EXIT_FAILURE;\n    }\n\n    MPI_Comm* commArray = static_cast<MPI_Comm*>(malloc(j * sizeof(MPI_Comm)));\n    if (commArray == nullptr) {\n        std::cerr << \"Error: Memory allocation failed.\" << std::endl;\n        return EXIT_FAILURE;\n    }\n\n    // Use commArray...\n\n    free(commArray);\n    return EXIT_SUCCESS;\n}\n```\n\n### Library Dependencies\n\nTo execute the code example properly, the following library dependencies are required:\n\n- `mpi.h`: This header is part of the MPI (Message Passing Interface) library, which is necessary for using `MPI_Comm`.\n\n### Relevant Resources\n\n- [OWASP Top Ten](https://owasp.org/www-project-top-ten/)\n- [OWASP Secure Coding Practices](https://owasp.org/www-project-secure-coding-practices-quick-reference-guide/)\n\n### Common Weakness Enumeration (CWE)\n\n- [CWE-190: Integer Overflow or Wraparound](https://cwe.mitre.org/data/definitions/190.html)\n- [CWE-119: Improper Restriction of Operations within the Bounds of a Memory Buffer](https://cwe.mitre.org/data/definitions/119.html)"
+              },
+              "properties": {
+                "tags": [
+                  "DS161085"
+                ]
+              }
+            },
+            {
+              "id": "glog-cd6e0288-6fb8-4e51-bd81-a5c10b06bd53",
+              "help": {
+                "text": "",
+                "markdown": "### Description\n\nThe \"Identified Issue with C Function (malloc)\" vulnerability in C++ arises when the `malloc` function is used improperly, potentially leading to buffer overflows, memory leaks, or undefined behavior. In the specific case of `malloc(length + i)`, the vulnerability may occur if the calculation of `length + i` results in an integer overflow or if the value of `i` is not properly validated, leading to incorrect memory allocation. This can cause the program to write beyond the allocated memory, resulting in a buffer overflow, which can be exploited by attackers to execute arbitrary code or cause a denial of service.\n\n### General Mitigation Advice\n\n1. **Input Validation**: Ensure that all inputs used in memory allocation calculations are validated to prevent integer overflow.\n2. **Use Safe Functions**: Consider using safer alternatives like `calloc` which initializes the allocated memory to zero, reducing the risk of using uninitialized memory.\n3. **Check Return Values**: Always check the return value of `malloc` to ensure that memory allocation was successful.\n4. **Limit Memory Usage**: Implement limits on the amount of memory that can be allocated to prevent excessive memory usage.\n5. **Use Modern C++ Features**: Prefer using C++ standard library features like `std::vector` or `std::unique_ptr` which manage memory automatically and reduce the risk of manual memory management errors.\n\n### Source Code Fix Recommendation\n\n```cpp\n#include <iostream>\n#include <limits>\n#include <cstdlib>\n\nint main() {\n    size_t length = 10;\n    size_t i = 5;\n\n    // Check for potential overflow\n    if (i > std::numeric_limits<size_t>::max() - length) {\n        std::cerr << \"Integer overflow detected!\" << std::endl;\n        return EXIT_FAILURE;\n    }\n\n    size_t totalSize = length + i;\n    void* ptr = malloc(totalSize);\n\n    if (ptr == nullptr) {\n        std::cerr << \"Memory allocation failed!\" << std::endl;\n        return EXIT_FAILURE;\n    }\n\n    // Use the allocated memory\n\n    free(ptr);\n    return EXIT_SUCCESS;\n}\n```\n\n### Library Dependencies\n\n- `<iostream>`: For input and output operations.\n- `<limits>`: To access the maximum value for `size_t`.\n- `<cstdlib>`: For `malloc`, `free`, and `EXIT_FAILURE`.\n\n### OWASP Resources\n\n- [OWASP Top Ten](https://owasp.org/www-project-top-ten/)\n- [OWASP Secure Coding Practices](https://owasp.org/www-project-secure-coding-practices-quick-reference-guide/)\n\n### Common Weakness Enumeration (CWE)\n\n- [CWE-190: Integer Overflow or Wraparound](https://cwe.mitre.org/data/definitions/190.html)\n- [CWE-119: Improper Restriction of Operations within the Bounds of a Memory Buffer](https://cwe.mitre.org/data/definitions/119.html)"
+              },
+              "properties": {
+                "tags": [
+                  "DS161085"
+                ]
+              }
+            },
+            {
+              "id": "glog-b69cb7e3-dbf5-40c0-9bf7-2e0aff8f34fb",
+              "help": {
+                "text": "",
+                "markdown": "### Description\n\nThe vulnerability identified with the `memcpy` function in C++ arises from improper handling of buffer sizes, which can lead to buffer overflow. The function call `memcpy(api_name, api, *lenapi)` is potentially unsafe if `*lenapi` exceeds the size of the destination buffer `api_name`. This can result in overwriting adjacent memory, leading to undefined behavior, crashes, or security vulnerabilities such as arbitrary code execution.\n\n### General Mitigation Advice\n\n1. **Validate Input Sizes**: Always ensure that the size of the data being copied does not exceed the size of the destination buffer.\n2. **Use Safer Alternatives**: Consider using safer functions like `memmove` or `strncpy` that provide additional safety checks.\n3. **Implement Bounds Checking**: Explicitly check the length of the data against the buffer size before performing the copy operation.\n4. **Adopt Secure Coding Practices**: Regularly review and test code for vulnerabilities and adhere to secure coding standards.\n\n### Source Code Fix Recommendation\n\nBelow is a fixed version of the code that includes bounds checking to prevent buffer overflow:\n\n```cpp\n#include <cstring> // Required for memcpy\n#include <iostream>\n\n// Example function demonstrating safe use of memcpy\nvoid safeMemcpy(char* api_name, const char* api, size_t lenapi, size_t api_name_size) {\n    if (lenapi <= api_name_size) {\n        memcpy(api_name, api, lenapi);\n    } else {\n        std::cerr << \"Error: Buffer overflow risk detected. Copy operation aborted.\" << std::endl;\n    }\n}\n\nint main() {\n    const size_t bufferSize = 256;\n    char api_name[bufferSize];\n    const char* api = \"Example API data\";\n    size_t lenapi = strlen(api);\n\n    safeMemcpy(api_name, api, lenapi, bufferSize);\n\n    return 0;\n}\n```\n\n### Library Dependencies\n\n- `<cstring>`: Required for the `memcpy` function.\n- `<iostream>`: Required for input/output operations.\n\n### OWASP Resources\n\n- [OWASP Top Ten](https://owasp.org/www-project-top-ten/)\n- [OWASP Secure Coding Practices](https://owasp.org/www-project-secure-coding-practices-quick-reference-guide/)\n\n### Common Weakness Enumeration (CWE)\n\n- [CWE-120: Buffer Copy without Checking Size of Input ('Classic Buffer Overflow')](https://cwe.mitre.org/data/definitions/120.html)"
+              },
+              "properties": {
+                "tags": [
+                  "DS121708"
+                ]
+              }
+            },
+            {
+              "id": "glog-f6063c04-7364-4fce-a780-66c2ce3c513d",
+              "help": {
+                "text": "",
+                "markdown": "### Description\n\nThe \"Identified Issue with C Function (malloc)\" vulnerability in C++ arises when the `malloc` function is used incorrectly, leading to potential memory allocation issues. A common mistake is using `malloc` with an incorrect size calculation, such as `malloc(sizeof(Int))`, which can lead to undefined behavior, memory corruption, or application crashes. This is because `Int` is not a standard type in C++, and the intended type size might not be allocated correctly.\n\n### General Mitigation Advice\n\n1. **Use Correct Type Names**: Ensure that the correct type names are used in `sizeof` calculations.\n2. **Prefer `new` in C++**: Use C++'s `new` operator instead of `malloc` for memory allocation, as it automatically calls constructors and is type-safe.\n3. **Check Return Values**: Always check the return value of `malloc` to ensure that memory allocation was successful.\n4. **Use Smart Pointers**: Consider using smart pointers like `std::unique_ptr` or `std::shared_ptr` to manage dynamic memory automatically.\n\n### Source Code Fix Recommendation\n\nIncorrect code:\n```cpp\nint* ptr = (int*)malloc(sizeof(Int));\n```\n\nCorrected code:\n```cpp\n#include <cstdlib> // Required for malloc\n#include <iostream>\n\nint main() {\n    int* ptr = (int*)malloc(sizeof(int)); // Correct type used\n    if (ptr == nullptr) {\n        std::cerr << \"Memory allocation failed\" << std::endl;\n        return 1;\n    }\n    // Use the allocated memory\n    free(ptr); // Don't forget to free the allocated memory\n    return 0;\n}\n```\n\n### Library Dependencies\n\nTo execute the corrected code example, the following library dependencies are required:\n- `<cstdlib>`: For `malloc` and `free` functions.\n- `<iostream>`: For input and output operations.\n\n### OWASP Resources\n\n- [OWASP Top Ten](https://owasp.org/www-project-top-ten/)\n- [OWASP Secure Coding Practices](https://owasp.org/www-project-secure-coding-practices-quick-reference-guide/)\n\n### Common Weakness Enumeration (CWE)\n\n- [CWE-122: Heap-based Buffer Overflow](https://cwe.mitre.org/data/definitions/122.html)\n- [CWE-131: Incorrect Calculation of Buffer Size](https://cwe.mitre.org/data/definitions/131.html)"
+              },
+              "properties": {
+                "tags": [
+                  "DS161085"
+                ]
+              }
+            }
+          ],
+          "language": "en-US",
+          "contents": [
+            "localizedData",
+            "nonLocalizedData"
+          ],
+          "isComprehensive": false
+        }
+      },
+      "language": "en-US",
+      "results": [
+        {
+          "ruleId": "glog-ab017d40-b57a-4461-bad2-95abce99ca74",
+          "kind": "fail",
+          "level": "note",
+          "message": {
+            "text": "\"Identified Issue with C Function: memcpy\""
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "TESTING/AOCL_PROGRESS_TESTS/test_aocl_progress_pcpotrf.c"
+                },
+                "region": {
+                  "startLine": 40,
+                  "startColumn": 4,
+                  "endLine": 40,
+                  "endColumn": 34,
+                  "charOffset": 1267,
+                  "charLength": 30,
+                  "snippet": {
+                    "text": "memcpy(api_name, api, *lenapi)",
+                    "rendered": {
+                      "text": "memcpy(api_name, api, *lenapi)",
+                      "markdown": "`memcpy(api_name, api, *lenapi)`"
+                    }
+                  },
+                  "sourceLanguage": "c"
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "There are a number of conditions in which memcpy can introduce a vulnerability (mismatched buffer sizes, null pointers, etc.). More secure alternitives perform additional validation of the source and destination buffer"
+              },
+              "artifactChanges": [
+                {
+                  "artifactLocation": {
+                    "uri": "TESTING/AOCL_PROGRESS_TESTS/test_aocl_progress_pcpotrf.c"
+                  },
+                  "replacements": [
+                    {
+                      "deletedRegion": {
+                        "charOffset": 1267,
+                        "charLength": 30
+                      },
+                      "insertedContent": {
+                        "text": "memcpy_s(api_name, <size of api_name>,  api,  *lenapi)"
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "properties": {
+            "DevSkimSeverity": "BestPractice",
+            "DevSkimConfidence": "High",
+            "tags": [
+              "API.DangerousAPI.ProblematicFunction"
+            ]
+          }
+        },
+        {
+          "ruleId": "glog-a5de3f87-4bb9-4295-a211-eb95c75b5570",
+          "kind": "fail",
+          "level": "note",
+          "message": {
+            "text": "\"Identified Issue with C Function: memcpy\""
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "TESTING/AOCL_PROGRESS_TESTS/test_aocl_progress_pzpotrf.c"
+                },
+                "region": {
+                  "startLine": 40,
+                  "startColumn": 4,
+                  "endLine": 40,
+                  "endColumn": 34,
+                  "charOffset": 1270,
+                  "charLength": 30,
+                  "snippet": {
+                    "text": "memcpy(api_name, api, *lenapi)",
+                    "rendered": {
+                      "text": "memcpy(api_name, api, *lenapi)",
+                      "markdown": "`memcpy(api_name, api, *lenapi)`"
+                    }
+                  },
+                  "sourceLanguage": "c"
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "There are a number of conditions in which memcpy can introduce a vulnerability (mismatched buffer sizes, null pointers, etc.). More secure alternitives perform additional validation of the source and destination buffer"
+              },
+              "artifactChanges": [
+                {
+                  "artifactLocation": {
+                    "uri": "TESTING/AOCL_PROGRESS_TESTS/test_aocl_progress_pzpotrf.c"
+                  },
+                  "replacements": [
+                    {
+                      "deletedRegion": {
+                        "charOffset": 1270,
+                        "charLength": 30
+                      },
+                      "insertedContent": {
+                        "text": "memcpy_s(api_name, <size of api_name>,  api,  *lenapi)"
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "properties": {
+            "DevSkimSeverity": "BestPractice",
+            "DevSkimConfidence": "High",
+            "tags": [
+              "API.DangerousAPI.ProblematicFunction"
+            ]
+          }
+        },
+        {
+          "ruleId": "glog-a9ca83c1-9639-4313-968c-7a87c738598e",
+          "kind": "fail",
+          "level": "note",
+          "message": {
+            "text": "\"Detected Issue with C Function (malloc)\""
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "PBLAS/SRC/pdpanel_bpack_.c"
+                },
+                "region": {
+                  "startLine": 40,
+                  "startColumn": 28,
+                  "endLine": 40,
+                  "endColumn": 63,
+                  "charOffset": 1126,
+                  "charLength": 35,
+                  "snippet": {
+                    "text": "malloc(nvecs * sizeof(MPI_Datatype)",
+                    "rendered": {
+                      "text": "malloc(nvecs * sizeof(MPI_Datatype)",
+                      "markdown": "`malloc(nvecs * sizeof(MPI_Datatype)`"
+                    }
+                  },
+                  "sourceLanguage": "c"
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "If the value provided to malloc is the result of unsafe integer math, it can result in an exploitable condition. "
+              },
+              "artifactChanges": [
+                {
+                  "artifactLocation": {
+                    "uri": "PBLAS/SRC/pdpanel_bpack_.c"
+                  },
+                  "replacements": [
+                    {
+                      "deletedRegion": {
+                        "charOffset": 1126,
+                        "charLength": 35
+                      },
+                      "insertedContent": {
+                        "text": "calloc(<number of elements>, <size of each element>)"
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "properties": {
+            "DevSkimSeverity": "BestPractice",
+            "DevSkimConfidence": "High",
+            "tags": [
+              "API.DangerousAPI.ProblematicFunction"
+            ]
+          }
+        },
+        {
+          "ruleId": "glog-da5d4527-e085-4b21-8455-d2ab7713442b",
+          "kind": "fail",
+          "level": "note",
+          "message": {
+            "text": "\"Detected Issue with C Function (malloc)\""
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "PBLAS/SRC/pdpanel_bpack_.c"
+                },
+                "region": {
+                  "startLine": 39,
+                  "startColumn": 28,
+                  "endLine": 39,
+                  "endColumn": 54,
+                  "charOffset": 1069,
+                  "charLength": 26,
+                  "snippet": {
+                    "text": "malloc(nvecs * sizeof(int)",
+                    "rendered": {
+                      "text": "malloc(nvecs * sizeof(int)",
+                      "markdown": "`malloc(nvecs * sizeof(int)`"
+                    }
+                  },
+                  "sourceLanguage": "c"
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "If the value provided to malloc is the result of unsafe integer math, it can result in an exploitable condition. "
+              },
+              "artifactChanges": [
+                {
+                  "artifactLocation": {
+                    "uri": "PBLAS/SRC/pdpanel_bpack_.c"
+                  },
+                  "replacements": [
+                    {
+                      "deletedRegion": {
+                        "charOffset": 1069,
+                        "charLength": 26
+                      },
+                      "insertedContent": {
+                        "text": "calloc(<number of elements>, <size of each element>)"
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "properties": {
+            "DevSkimSeverity": "BestPractice",
+            "DevSkimConfidence": "High",
+            "tags": [
+              "API.DangerousAPI.ProblematicFunction"
+            ]
+          }
+        },
+        {
+          "ruleId": "glog-f1172da6-2cf3-4474-858b-4eda227467bb",
+          "kind": "fail",
+          "level": "note",
+          "message": {
+            "text": "\"Identified Issue with C Function: memcpy\""
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "TESTING/AOCL_PROGRESS_TESTS/test_aocl_progress_pzgetrf.c"
+                },
+                "region": {
+                  "startLine": 40,
+                  "startColumn": 4,
+                  "endLine": 40,
+                  "endColumn": 34,
+                  "charOffset": 1275,
+                  "charLength": 30,
+                  "snippet": {
+                    "text": "memcpy(api_name, api, *lenapi)",
+                    "rendered": {
+                      "text": "memcpy(api_name, api, *lenapi)",
+                      "markdown": "`memcpy(api_name, api, *lenapi)`"
+                    }
+                  },
+                  "sourceLanguage": "c"
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "There are a number of conditions in which memcpy can introduce a vulnerability (mismatched buffer sizes, null pointers, etc.). More secure alternitives perform additional validation of the source and destination buffer"
+              },
+              "artifactChanges": [
+                {
+                  "artifactLocation": {
+                    "uri": "TESTING/AOCL_PROGRESS_TESTS/test_aocl_progress_pzgetrf.c"
+                  },
+                  "replacements": [
+                    {
+                      "deletedRegion": {
+                        "charOffset": 1275,
+                        "charLength": 30
+                      },
+                      "insertedContent": {
+                        "text": "memcpy_s(api_name, <size of api_name>,  api,  *lenapi)"
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "properties": {
+            "DevSkimSeverity": "BestPractice",
+            "DevSkimConfidence": "High",
+            "tags": [
+              "API.DangerousAPI.ProblematicFunction"
+            ]
+          }
+        },
+        {
+          "ruleId": "glog-5b9bf29d-9de7-4284-8542-8654d54819f5",
+          "kind": "fail",
+          "level": "note",
+          "message": {
+            "text": "\"Identified Issue with C Function: memcpy\""
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "TESTING/AOCL_PROGRESS_TESTS/test_aocl_progress_pdgetrf.c"
+                },
+                "region": {
+                  "startLine": 38,
+                  "startColumn": 4,
+                  "endLine": 38,
+                  "endColumn": 34,
+                  "charOffset": 1219,
+                  "charLength": 30,
+                  "snippet": {
+                    "text": "memcpy(api_name, api, *lenapi)",
+                    "rendered": {
+                      "text": "memcpy(api_name, api, *lenapi)",
+                      "markdown": "`memcpy(api_name, api, *lenapi)`"
+                    }
+                  },
+                  "sourceLanguage": "c"
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "There are a number of conditions in which memcpy can introduce a vulnerability (mismatched buffer sizes, null pointers, etc.). More secure alternitives perform additional validation of the source and destination buffer"
+              },
+              "artifactChanges": [
+                {
+                  "artifactLocation": {
+                    "uri": "TESTING/AOCL_PROGRESS_TESTS/test_aocl_progress_pdgetrf.c"
+                  },
+                  "replacements": [
+                    {
+                      "deletedRegion": {
+                        "charOffset": 1219,
+                        "charLength": 30
+                      },
+                      "insertedContent": {
+                        "text": "memcpy_s(api_name, <size of api_name>,  api,  *lenapi)"
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "properties": {
+            "DevSkimSeverity": "BestPractice",
+            "DevSkimConfidence": "High",
+            "tags": [
+              "API.DangerousAPI.ProblematicFunction"
+            ]
+          }
+        },
+        {
+          "ruleId": "glog-86602eb8-3685-4955-a757-1f49cb0e98b6",
+          "kind": "fail",
+          "level": "note",
+          "message": {
+            "text": "\"Identified Issue with C Function (malloc)\""
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "PBLAS/SRC/pdpanel_bpack_.c"
+                },
+                "region": {
+                  "startLine": 38,
+                  "startColumn": 28,
+                  "endLine": 38,
+                  "endColumn": 57,
+                  "charOffset": 1009,
+                  "charLength": 29,
+                  "snippet": {
+                    "text": "malloc(nvecs * sizeof(void *)",
+                    "rendered": {
+                      "text": "malloc(nvecs * sizeof(void *)",
+                      "markdown": "`malloc(nvecs * sizeof(void *)`"
+                    }
+                  },
+                  "sourceLanguage": "c"
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "If the value provided to malloc is the result of unsafe integer math, it can result in an exploitable condition. "
+              },
+              "artifactChanges": [
+                {
+                  "artifactLocation": {
+                    "uri": "PBLAS/SRC/pdpanel_bpack_.c"
+                  },
+                  "replacements": [
+                    {
+                      "deletedRegion": {
+                        "charOffset": 1009,
+                        "charLength": 29
+                      },
+                      "insertedContent": {
+                        "text": "calloc(<number of elements>, <size of each element>)"
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "properties": {
+            "DevSkimSeverity": "BestPractice",
+            "DevSkimConfidence": "High",
+            "tags": [
+              "API.DangerousAPI.ProblematicFunction"
+            ]
+          }
+        },
+        {
+          "ruleId": "glog-63fb832e-a018-4981-88cb-1120a43b8640",
+          "kind": "fail",
+          "level": "note",
+          "message": {
+            "text": "\"Identified Issue with C Function: memcpy\""
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "TESTING/AOCL_PROGRESS_TESTS/test_aocl_progress_pdpotrf.c"
+                },
+                "region": {
+                  "startLine": 38,
+                  "startColumn": 4,
+                  "endLine": 38,
+                  "endColumn": 34,
+                  "charOffset": 1213,
+                  "charLength": 30,
+                  "snippet": {
+                    "text": "memcpy(api_name, api, *lenapi)",
+                    "rendered": {
+                      "text": "memcpy(api_name, api, *lenapi)",
+                      "markdown": "`memcpy(api_name, api, *lenapi)`"
+                    }
+                  },
+                  "sourceLanguage": "c"
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "There are a number of conditions in which memcpy can introduce a vulnerability (mismatched buffer sizes, null pointers, etc.). More secure alternitives perform additional validation of the source and destination buffer"
+              },
+              "artifactChanges": [
+                {
+                  "artifactLocation": {
+                    "uri": "TESTING/AOCL_PROGRESS_TESTS/test_aocl_progress_pdpotrf.c"
+                  },
+                  "replacements": [
+                    {
+                      "deletedRegion": {
+                        "charOffset": 1213,
+                        "charLength": 30
+                      },
+                      "insertedContent": {
+                        "text": "memcpy_s(api_name, <size of api_name>,  api,  *lenapi)"
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "properties": {
+            "DevSkimSeverity": "BestPractice",
+            "DevSkimConfidence": "High",
+            "tags": [
+              "API.DangerousAPI.ProblematicFunction"
+            ]
+          }
+        },
+        {
+          "ruleId": "glog-ded8e439-ccc4-4a40-8973-dc4018e20b4f",
+          "kind": "fail",
+          "level": "note",
+          "message": {
+            "text": "\"Identified Issue with C Function: memcpy\""
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "TESTING/AOCL_PROGRESS_TESTS/test_aocl_progress_psgeqrf.c"
+                },
+                "region": {
+                  "startLine": 38,
+                  "startColumn": 4,
+                  "endLine": 38,
+                  "endColumn": 34,
+                  "charOffset": 1233,
+                  "charLength": 30,
+                  "snippet": {
+                    "text": "memcpy(api_name, api, *lenapi)",
+                    "rendered": {
+                      "text": "memcpy(api_name, api, *lenapi)",
+                      "markdown": "`memcpy(api_name, api, *lenapi)`"
+                    }
+                  },
+                  "sourceLanguage": "c"
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "There are a number of conditions in which memcpy can introduce a vulnerability (mismatched buffer sizes, null pointers, etc.). More secure alternitives perform additional validation of the source and destination buffer"
+              },
+              "artifactChanges": [
+                {
+                  "artifactLocation": {
+                    "uri": "TESTING/AOCL_PROGRESS_TESTS/test_aocl_progress_psgeqrf.c"
+                  },
+                  "replacements": [
+                    {
+                      "deletedRegion": {
+                        "charOffset": 1233,
+                        "charLength": 30
+                      },
+                      "insertedContent": {
+                        "text": "memcpy_s(api_name, <size of api_name>,  api,  *lenapi)"
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "properties": {
+            "DevSkimSeverity": "BestPractice",
+            "DevSkimConfidence": "High",
+            "tags": [
+              "API.DangerousAPI.ProblematicFunction"
+            ]
+          }
+        },
+        {
+          "ruleId": "glog-ea9dc2ed-c900-4364-a95d-4bc93afcd4ed",
+          "kind": "fail",
+          "level": "note",
+          "message": {
+            "text": "\"Detected Issue with C Function (malloc)\""
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "PBLAS/SRC/pdpanel_bpack_.c"
+                },
+                "region": {
+                  "startLine": 41,
+                  "startColumn": 28,
+                  "endLine": 41,
+                  "endColumn": 59,
+                  "charOffset": 1192,
+                  "charLength": 31,
+                  "snippet": {
+                    "text": "malloc(nvecs * sizeof(MPI_Aint)",
+                    "rendered": {
+                      "text": "malloc(nvecs * sizeof(MPI_Aint)",
+                      "markdown": "`malloc(nvecs * sizeof(MPI_Aint)`"
+                    }
+                  },
+                  "sourceLanguage": "c"
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "If the value provided to malloc is the result of unsafe integer math, it can result in an exploitable condition. "
+              },
+              "artifactChanges": [
+                {
+                  "artifactLocation": {
+                    "uri": "PBLAS/SRC/pdpanel_bpack_.c"
+                  },
+                  "replacements": [
+                    {
+                      "deletedRegion": {
+                        "charOffset": 1192,
+                        "charLength": 31
+                      },
+                      "insertedContent": {
+                        "text": "calloc(<number of elements>, <size of each element>)"
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "properties": {
+            "DevSkimSeverity": "BestPractice",
+            "DevSkimConfidence": "High",
+            "tags": [
+              "API.DangerousAPI.ProblematicFunction"
+            ]
+          }
+        },
+        {
+          "ruleId": "glog-d8c22481-6d3a-4d3b-b5b8-95d307ef3aca",
+          "kind": "fail",
+          "level": "note",
+          "message": {
+            "text": "\"Identified Issue with C Function: memcpy\""
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "TESTING/AOCL_PROGRESS_TESTS/test_aocl_progress_pdgeqrf.c"
+                },
+                "region": {
+                  "startLine": 38,
+                  "startColumn": 4,
+                  "endLine": 38,
+                  "endColumn": 34,
+                  "charOffset": 1236,
+                  "charLength": 30,
+                  "snippet": {
+                    "text": "memcpy(api_name, api, *lenapi)",
+                    "rendered": {
+                      "text": "memcpy(api_name, api, *lenapi)",
+                      "markdown": "`memcpy(api_name, api, *lenapi)`"
+                    }
+                  },
+                  "sourceLanguage": "c"
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "There are a number of conditions in which memcpy can introduce a vulnerability (mismatched buffer sizes, null pointers, etc.). More secure alternitives perform additional validation of the source and destination buffer"
+              },
+              "artifactChanges": [
+                {
+                  "artifactLocation": {
+                    "uri": "TESTING/AOCL_PROGRESS_TESTS/test_aocl_progress_pdgeqrf.c"
+                  },
+                  "replacements": [
+                    {
+                      "deletedRegion": {
+                        "charOffset": 1236,
+                        "charLength": 30
+                      },
+                      "insertedContent": {
+                        "text": "memcpy_s(api_name, <size of api_name>,  api,  *lenapi)"
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "properties": {
+            "DevSkimSeverity": "BestPractice",
+            "DevSkimConfidence": "High",
+            "tags": [
+              "API.DangerousAPI.ProblematicFunction"
+            ]
+          }
+        },
+        {
+          "ruleId": "glog-62ae56f3-1c09-44fd-b120-8afda29c4a99",
+          "kind": "fail",
+          "level": "note",
+          "message": {
+            "text": "\"Identified Issue with C Function: memcpy\""
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "TESTING/AOCL_PROGRESS_TESTS/test_aocl_progress_pcgetrf.c"
+                },
+                "region": {
+                  "startLine": 40,
+                  "startColumn": 4,
+                  "endLine": 40,
+                  "endColumn": 34,
+                  "charOffset": 1272,
+                  "charLength": 30,
+                  "snippet": {
+                    "text": "memcpy(api_name, api, *lenapi)",
+                    "rendered": {
+                      "text": "memcpy(api_name, api, *lenapi)",
+                      "markdown": "`memcpy(api_name, api, *lenapi)`"
+                    }
+                  },
+                  "sourceLanguage": "c"
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "There are a number of conditions in which memcpy can introduce a vulnerability (mismatched buffer sizes, null pointers, etc.). More secure alternitives perform additional validation of the source and destination buffer"
+              },
+              "artifactChanges": [
+                {
+                  "artifactLocation": {
+                    "uri": "TESTING/AOCL_PROGRESS_TESTS/test_aocl_progress_pcgetrf.c"
+                  },
+                  "replacements": [
+                    {
+                      "deletedRegion": {
+                        "charOffset": 1272,
+                        "charLength": 30
+                      },
+                      "insertedContent": {
+                        "text": "memcpy_s(api_name, <size of api_name>,  api,  *lenapi)"
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "properties": {
+            "DevSkimSeverity": "BestPractice",
+            "DevSkimConfidence": "High",
+            "tags": [
+              "API.DangerousAPI.ProblematicFunction"
+            ]
+          }
+        },
+        {
+          "ruleId": "glog-c6655d00-bd06-4ad0-b009-158d62144c22",
+          "kind": "fail",
+          "level": "note",
+          "message": {
+            "text": "\"Identified Issue with C Function: memcpy\""
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "TESTING/AOCL_PROGRESS_TESTS/test_aocl_progress_pspotrf.c"
+                },
+                "region": {
+                  "startLine": 38,
+                  "startColumn": 4,
+                  "endLine": 38,
+                  "endColumn": 34,
+                  "charOffset": 1212,
+                  "charLength": 30,
+                  "snippet": {
+                    "text": "memcpy(api_name, api, *lenapi)",
+                    "rendered": {
+                      "text": "memcpy(api_name, api, *lenapi)",
+                      "markdown": "`memcpy(api_name, api, *lenapi)`"
+                    }
+                  },
+                  "sourceLanguage": "c"
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "There are a number of conditions in which memcpy can introduce a vulnerability (mismatched buffer sizes, null pointers, etc.). More secure alternitives perform additional validation of the source and destination buffer"
+              },
+              "artifactChanges": [
+                {
+                  "artifactLocation": {
+                    "uri": "TESTING/AOCL_PROGRESS_TESTS/test_aocl_progress_pspotrf.c"
+                  },
+                  "replacements": [
+                    {
+                      "deletedRegion": {
+                        "charOffset": 1212,
+                        "charLength": 30
+                      },
+                      "insertedContent": {
+                        "text": "memcpy_s(api_name, <size of api_name>,  api,  *lenapi)"
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "properties": {
+            "DevSkimSeverity": "BestPractice",
+            "DevSkimConfidence": "High",
+            "tags": [
+              "API.DangerousAPI.ProblematicFunction"
+            ]
+          }
+        },
+        {
+          "ruleId": "glog-ca35f48e-6caa-42c5-a87c-db1f1b81045e",
+          "kind": "fail",
+          "level": "note",
+          "message": {
+            "text": "\"Identified Issue with C Function: memcpy\""
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "TESTING/AOCL_PROGRESS_TESTS/test_aocl_progress_psgetrf.c"
+                },
+                "region": {
+                  "startLine": 38,
+                  "startColumn": 4,
+                  "endLine": 38,
+                  "endColumn": 34,
+                  "charOffset": 1217,
+                  "charLength": 30,
+                  "snippet": {
+                    "text": "memcpy(api_name, api, *lenapi)",
+                    "rendered": {
+                      "text": "memcpy(api_name, api, *lenapi)",
+                      "markdown": "`memcpy(api_name, api, *lenapi)`"
+                    }
+                  },
+                  "sourceLanguage": "c"
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "There are a number of conditions in which memcpy can introduce a vulnerability (mismatched buffer sizes, null pointers, etc.). More secure alternitives perform additional validation of the source and destination buffer"
+              },
+              "artifactChanges": [
+                {
+                  "artifactLocation": {
+                    "uri": "TESTING/AOCL_PROGRESS_TESTS/test_aocl_progress_psgetrf.c"
+                  },
+                  "replacements": [
+                    {
+                      "deletedRegion": {
+                        "charOffset": 1217,
+                        "charLength": 30
+                      },
+                      "insertedContent": {
+                        "text": "memcpy_s(api_name, <size of api_name>,  api,  *lenapi)"
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "properties": {
+            "DevSkimSeverity": "BestPractice",
+            "DevSkimConfidence": "High",
+            "tags": [
+              "API.DangerousAPI.ProblematicFunction"
+            ]
+          }
+        },
+        {
+          "ruleId": "glog-ee407324-5fcb-43c7-ac9f-e17de0d153a1",
+          "kind": "fail",
+          "level": "note",
+          "message": {
+            "text": "\"Identified Issue with C Function: memcpy\""
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "TESTING/AOCL_PROGRESS_TESTS/test_aocl_progress_pcgeqrf.c"
+                },
+                "region": {
+                  "startLine": 40,
+                  "startColumn": 4,
+                  "endLine": 40,
+                  "endColumn": 34,
+                  "charOffset": 1310,
+                  "charLength": 30,
+                  "snippet": {
+                    "text": "memcpy(api_name, api, *lenapi)",
+                    "rendered": {
+                      "text": "memcpy(api_name, api, *lenapi)",
+                      "markdown": "`memcpy(api_name, api, *lenapi)`"
+                    }
+                  },
+                  "sourceLanguage": "c"
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "There are a number of conditions in which memcpy can introduce a vulnerability (mismatched buffer sizes, null pointers, etc.). More secure alternitives perform additional validation of the source and destination buffer"
+              },
+              "artifactChanges": [
+                {
+                  "artifactLocation": {
+                    "uri": "TESTING/AOCL_PROGRESS_TESTS/test_aocl_progress_pcgeqrf.c"
+                  },
+                  "replacements": [
+                    {
+                      "deletedRegion": {
+                        "charOffset": 1310,
+                        "charLength": 30
+                      },
+                      "insertedContent": {
+                        "text": "memcpy_s(api_name, <size of api_name>,  api,  *lenapi)"
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "properties": {
+            "DevSkimSeverity": "BestPractice",
+            "DevSkimConfidence": "High",
+            "tags": [
+              "API.DangerousAPI.ProblematicFunction"
+            ]
+          }
+        },
+        {
+          "ruleId": "glog-6782e56d-266f-400f-9366-40ab839d915c",
+          "kind": "fail",
+          "level": "note",
+          "message": {
+            "text": "\"Detected Issue with C Function (malloc)\""
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "BLACS/SRC/free_handle_.c"
+                },
+                "region": {
+                  "startLine": 38,
+                  "startColumn": 30,
+                  "endLine": 38,
+                  "endColumn": 57,
+                  "charOffset": 1093,
+                  "charLength": 27,
+                  "snippet": {
+                    "text": "malloc(j * sizeof(MPI_Comm)",
+                    "rendered": {
+                      "text": "malloc(j * sizeof(MPI_Comm)",
+                      "markdown": "`malloc(j * sizeof(MPI_Comm)`"
+                    }
+                  },
+                  "sourceLanguage": "c"
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "If the value provided to malloc is the result of unsafe integer math, it can result in an exploitable condition. "
+              },
+              "artifactChanges": [
+                {
+                  "artifactLocation": {
+                    "uri": "BLACS/SRC/free_handle_.c"
+                  },
+                  "replacements": [
+                    {
+                      "deletedRegion": {
+                        "charOffset": 1093,
+                        "charLength": 27
+                      },
+                      "insertedContent": {
+                        "text": "calloc(<number of elements>, <size of each element>)"
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "properties": {
+            "DevSkimSeverity": "BestPractice",
+            "DevSkimConfidence": "High",
+            "tags": [
+              "API.DangerousAPI.ProblematicFunction"
+            ]
+          }
+        },
+        {
+          "ruleId": "glog-cd6e0288-6fb8-4e51-bd81-a5c10b06bd53",
+          "kind": "fail",
+          "level": "note",
+          "message": {
+            "text": "\"Identified Issue with C Function (malloc)\""
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "BLACS/SRC/BI_EmergencyBuff.c"
+                },
+                "region": {
+                  "startLine": 34,
+                  "startColumn": 19,
+                  "endLine": 34,
+                  "endColumn": 37,
+                  "charOffset": 1145,
+                  "charLength": 18,
+                  "snippet": {
+                    "text": "malloc(length + i)",
+                    "rendered": {
+                      "text": "malloc(length + i)",
+                      "markdown": "`malloc(length + i)`"
+                    }
+                  },
+                  "sourceLanguage": "c"
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "If the value provided to malloc is the result of unsafe integer math, it can result in an exploitable condition. "
+              },
+              "artifactChanges": [
+                {
+                  "artifactLocation": {
+                    "uri": "BLACS/SRC/BI_EmergencyBuff.c"
+                  },
+                  "replacements": [
+                    {
+                      "deletedRegion": {
+                        "charOffset": 1145,
+                        "charLength": 18
+                      },
+                      "insertedContent": {
+                        "text": "calloc(<number of elements>, <size of each element>)"
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "properties": {
+            "DevSkimSeverity": "BestPractice",
+            "DevSkimConfidence": "High",
+            "tags": [
+              "API.DangerousAPI.ProblematicFunction"
+            ]
+          }
+        },
+        {
+          "ruleId": "glog-b69cb7e3-dbf5-40c0-9bf7-2e0aff8f34fb",
+          "kind": "fail",
+          "level": "note",
+          "message": {
+            "text": "\"Identified Issue with C Function: memcpy\""
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "TESTING/AOCL_PROGRESS_TESTS/test_aocl_progress_pzgeqrf.c"
+                },
+                "region": {
+                  "startLine": 40,
+                  "startColumn": 4,
+                  "endLine": 40,
+                  "endColumn": 34,
+                  "charOffset": 1315,
+                  "charLength": 30,
+                  "snippet": {
+                    "text": "memcpy(api_name, api, *lenapi)",
+                    "rendered": {
+                      "text": "memcpy(api_name, api, *lenapi)",
+                      "markdown": "`memcpy(api_name, api, *lenapi)`"
+                    }
+                  },
+                  "sourceLanguage": "c"
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "There are a number of conditions in which memcpy can introduce a vulnerability (mismatched buffer sizes, null pointers, etc.). More secure alternitives perform additional validation of the source and destination buffer"
+              },
+              "artifactChanges": [
+                {
+                  "artifactLocation": {
+                    "uri": "TESTING/AOCL_PROGRESS_TESTS/test_aocl_progress_pzgeqrf.c"
+                  },
+                  "replacements": [
+                    {
+                      "deletedRegion": {
+                        "charOffset": 1315,
+                        "charLength": 30
+                      },
+                      "insertedContent": {
+                        "text": "memcpy_s(api_name, <size of api_name>,  api,  *lenapi)"
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "properties": {
+            "DevSkimSeverity": "BestPractice",
+            "DevSkimConfidence": "High",
+            "tags": [
+              "API.DangerousAPI.ProblematicFunction"
+            ]
+          }
+        },
+        {
+          "ruleId": "glog-f6063c04-7364-4fce-a780-66c2ce3c513d",
+          "kind": "fail",
+          "level": "note",
+          "message": {
+            "text": "\"Identified Issue with C Function (malloc)\""
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "BLACS/SRC/blacs_pinfo_.c"
+                },
+                "region": {
+                  "startLine": 21,
+                  "startColumn": 30,
+                  "endLine": 21,
+                  "endColumn": 48,
+                  "charOffset": 469,
+                  "charLength": 18,
+                  "snippet": {
+                    "text": "malloc(sizeof(Int)",
+                    "rendered": {
+                      "text": "malloc(sizeof(Int)",
+                      "markdown": "`malloc(sizeof(Int)`"
+                    }
+                  },
+                  "sourceLanguage": "c"
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "If the value provided to malloc is the result of unsafe integer math, it can result in an exploitable condition. "
+              },
+              "artifactChanges": [
+                {
+                  "artifactLocation": {
+                    "uri": "BLACS/SRC/blacs_pinfo_.c"
+                  },
+                  "replacements": [
+                    {
+                      "deletedRegion": {
+                        "charOffset": 469,
+                        "charLength": 18
+                      },
+                      "insertedContent": {
+                        "text": "calloc(<number of elements>, <size of each element>)"
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "properties": {
+            "DevSkimSeverity": "BestPractice",
+            "DevSkimConfidence": "High",
+            "tags": [
+              "API.DangerousAPI.ProblematicFunction"
+            ]
+          }
+        }
+      ],
+      "newlineSequences": [
+        "\r\n",
+        "\n"
+      ]
+    }
+  ]
+}
